@@ -3,6 +3,10 @@ package com.projectbharat.counterapp
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.material3.AlertDialog
@@ -42,7 +46,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import android.content.pm.PackageManager
 import android.Manifest
 import androidx.compose.foundation.Canvas
-import android.content.IntentFilter
+import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clipFilter
 import android.os.Build
 import java.text.NumberFormat
 import androidx.compose.foundation.clickable
@@ -346,30 +354,72 @@ fun AutoChantCounterScreen(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(if (isSystemInDarkTheme()) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark),
+                    "Bhajame", Modifier.width(96.dp).height(36.dp), contentScale = ContentScale.Fit)
+                Spacer(Modifier.weight(1f))
+            val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
+            Surface(
+                modifier = Modifier,
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(magicCountLabel, style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Switch(
+                        checked = automatic,
+                        modifier = Modifier.semantics { contentDescription = magicCountLabel },
+                        onCheckedChange = { enabled ->
+                            if (!enabled) stopRecognition()
+                            else {
+                                automatic = false
+                                matched = false
+                                matchedCount = 0
+                                transcript = ""
+                                status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
+                                running = false
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                                    microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                                else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                else startService()
+                            }
+                        }
+                    )
+                }
+            }
+            }
+            Spacer(Modifier.height(22.dp))
             val malaProgress = if (totalCount > 0 && totalCount % 108 == 0) 108 else totalCount % 108
             val malaFraction = malaProgress / 108f
             val beadTint by animateColorAsState(if (malaProgress == 108) Color(0xFFB87928) else Color(0xFF7650A1), label = "beadCountTint")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFFEAF3F9)) {
-                    Column(Modifier.padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(totalCount.toString(), color = Color(0xFF285D87), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
                         Text(if (uiLanguage.isEnglish) "LIFETIME" else uiLanguage.indic("आजवरचे जप", "अब तक के जप"), color = Color(0xFF285D87), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFFF4EFF9)) {
-                    Column(Modifier.padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("$malaProgress/108", color = beadTint, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
                         Text(if (uiLanguage.isEnglish) "MALA PROGRESS" else uiLanguage.indic("माळ प्रगती", "माला की प्रगति"), color = Color(0xFF76528D), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFFFFF4E4)) {
-                    Column(Modifier.padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text((totalCount / 108).toString(), color = Color(0xFFB87928), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
                         Text(if (uiLanguage.isEnglish) "MALAS" else uiLanguage.indic("पूर्ण माळा", "पूरी मालाएँ"), color = Color(0xFF9A6828), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
-            Text(displayMantra(context, categoryId, target, latinMantras), color = if (MaterialTheme.colorScheme.background == Color.White) Color(0xFF38234F) else ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp))
+            Text(displayMantra(context, categoryId, target, latinMantras), color = if (MaterialTheme.colorScheme.background == Color.White) Color(0xFF38234F) else ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp))
             val manualInteraction = remember { MutableInteractionSource() }
             val manualPressed by manualInteraction.collectIsPressedAsState()
             val manualScale by animateFloatAsState(if (manualPressed) 0.94f else 1f, label = "japaTapScale")
@@ -398,60 +448,11 @@ fun AutoChantCounterScreen(
                 }
             }
             }
-            val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
-            Surface(
-                modifier = Modifier.padding(top = 12.dp),
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 14.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.spacedBy(9.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text(magicCountLabel, style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Switch(
-                        checked = automatic,
-                        modifier = Modifier.semantics { contentDescription = magicCountLabel },
-                        onCheckedChange = { enabled ->
-                            if (!enabled) stopRecognition()
-                            else {
-                                automatic = false
-                                matched = false
-                                matchedCount = 0
-                                transcript = ""
-                                status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
-                                running = false
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                                    microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                                else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                else startService()
-                            }
-                        }
-                    )
-                }
-            }
-            if (!automatic && status.isNotBlank()) {
-                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (!automatic && status.isNotBlank() &&
+                !status.contains("paused", true) && !status.contains("थांबवली") && !status.contains("रुकी")) {
+                Text(status, color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
             }
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(if (uiLanguage.isEnglish) "Today · $dayTotal/$dailyGoal" else "आज · $dayTotal/$dailyGoal",
-                        color = ink, style = MaterialTheme.typography.labelLarge)
-                    if (sessionCount > 0) Text(
-                        if (uiLanguage.isEnglish) "This session · $sessionCount" else uiLanguage.indic("या सत्रात · $sessionCount", "इस सत्र में · $sessionCount"),
-                        color = ink.copy(alpha = .7f), style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-            LinearProgressIndicator(
-                progress = { (dayTotal.toFloat() / dailyGoal).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth()
-            )
             if (automatic) {
                 val listeningOffline = running && (status.contains("Listening offline", true) || status.contains("Mantra matched", true) || status.contains("ऐकत आहे", true) || status.contains("मंत्र जुळला", true))
                 val micPulse = rememberInfiniteTransition(label = "offlineMicPulse")
@@ -508,7 +509,7 @@ fun AutoChantCounterScreen(
                 }
             }
             Column(
-                Modifier.padding(top = 14.dp).widthIn(max = 272.dp).fillMaxWidth(),
+                Modifier.padding(top = 30.dp).widthIn(max = 260.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -580,9 +581,11 @@ fun AutoChantCounterScreen(
                         border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Image(painterResource(R.drawable.practice_sunrise), null,
+                                Modifier.padding(start = 8.dp).size(48.dp).clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop)
                             Column(Modifier.weight(1f).clickable { pendingMantra = item }.padding(12.dp)) {
                                 Text(if (latinMantras) item.latin else item.devanagari, style = MaterialTheme.typography.titleMedium)
-                                Text(if (latinMantras) item.devanagari else item.latin, style = MaterialTheme.typography.bodySmall)
                             }
                             if (selected) Icon(Icons.Default.Check, uiLanguage.text("Selected", "निवडलेला", "चुना गया"))
                             val favourite = item.devanagari in favourites
@@ -600,7 +603,7 @@ fun AutoChantCounterScreen(
             }
             if (selection != null) {
                 Text(if (latinMantras) selection.latin else selection.devanagari, style = MaterialTheme.typography.labelLarge,
-                    maxLines = 2)
+                    maxLines = 2, color = MaterialTheme.colorScheme.onBackground)
             }
             Button(onClick = {
                 if (selection != null) {
@@ -614,11 +617,11 @@ fun AutoChantCounterScreen(
                     rememberMantra(selection.devanagari)
                 }
                 onLibraryChange(false)
-            }, modifier = Modifier.fillMaxWidth()) {
+            }, modifier = Modifier.widthIn(max = 260.dp).fillMaxWidth().align(Alignment.CenterHorizontally)) {
                 Text(uiLanguage.text("Start Japa", "जप सुरू करा", "जप शुरू करें"))
             }
             TextButton(onClick = { newMantraMr = ""; newMantraEn = ""; addMantraDialog = true },
-                modifier = Modifier.fillMaxWidth()) {
+                modifier = Modifier.widthIn(max = 260.dp).fillMaxWidth().align(Alignment.CenterHorizontally)) {
                 Text(uiLanguage.text("Add mantra", "मंत्र जोडा", "मंत्र जोड़ें"))
             }
         }

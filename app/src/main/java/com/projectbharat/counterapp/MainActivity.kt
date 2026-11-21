@@ -379,41 +379,45 @@ fun CounterApp(repo: CounterRepository) {
             bottomBar = {
                 if (!mantraLibrary && !child) {
                     val shape = RoundedCornerShape(28.dp)
-                    Row(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 10.dp)
-                        .fillMaxWidth().shadow(10.dp, shape).clip(shape)
-                        .background(if (dark) Color(0xFF262321) else Color(0xFFFFFBF4))
-                        .padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically) {
-                        listOf(1, 0, 2).forEach { index ->
-                            val label = when (index) {
-                                1 -> uiLanguage.text("Progress", "प्रगती", "प्रगति")
-                                2 -> uiLanguage.text("Settings", "सेटिंग्ज", "सेटिंग्स")
-                                else -> uiLanguage.text("Practice", "जप", "जप")
-                            }
-                            val icon = when (index) {
-                                1 -> Icons.Default.BarChart
-                                2 -> Icons.Default.Edit
-                                else -> Icons.Default.SelfImprovement
-                            }
-                            Column(Modifier.weight(1f).clickable { navigate(index) }.padding(4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally) {
-                                Surface(shape = CircleShape, color = if (index == 0) MaterialTheme.colorScheme.primary
-                                    else Color.Transparent, modifier = Modifier.size(if (index == 0) 40.dp else 32.dp)) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(icon, null, tint = if (index == 0) MaterialTheme.colorScheme.onPrimary
-                                            else if (tab == index) MaterialTheme.colorScheme.primary else ink)
-                                    }
+                    val footerColor = if (dark) Color(0xFF262321) else Color(0xFFFFFBF4)
+                    val accent = MaterialTheme.colorScheme.primary
+                    Box(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()) {
+                        Row(Modifier.padding(top = 10.dp).fillMaxWidth().shadow(10.dp, shape).clip(shape)
+                            .background(footerColor).padding(top = 10.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                            listOf(1, 0, 2).forEach { index ->
+                                val label = when (index) {
+                                    1 -> uiLanguage.text("Progress", "प्रगती", "प्रगति")
+                                    2 -> uiLanguage.text("Settings", "सेटिंग्ज", "सेटिंग्स")
+                                    else -> uiLanguage.text("Practice", "जप", "जप")
                                 }
-                                Text(label, color = if (tab == index) MaterialTheme.colorScheme.primary else ink,
-                                    style = MaterialTheme.typography.labelSmall)
+                                val icon = when (index) {
+                                    1 -> Icons.Default.BarChart
+                                    2 -> Icons.Default.Edit
+                                    else -> Icons.Default.SelfImprovement
+                                }
+                                Column(Modifier.weight(1f).clickable { navigate(index) }.padding(4.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(icon, null, Modifier.size(26.dp), tint = if (tab == index) accent else ink)
+                                    Text(label, color = if (tab == index) accent else ink,
+                                        style = MaterialTheme.typography.labelSmall)
+                                }
                             }
+                        }
+                        androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+                            val position = when (tab) { 1 -> 1f / 6f; 2 -> 5f / 6f; else -> .5f }
+                            val center = size.width * position
+                            drawCircle(color = if (dark) Color(0xFF141414) else Color(0xFFFFF7E9),
+                                radius = 14.dp.toPx(), center = androidx.compose.ui.geometry.Offset(center, 10.dp.toPx()))
+                            drawCircle(color = accent, radius = 5.dp.toPx(),
+                                center = androidx.compose.ui.geometry.Offset(center, 4.dp.toPx()))
                         }
                     }
                 }
             }
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
-                Row(
+                if (tab != 0 || child || mantraLibrary) Row(
                     Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
