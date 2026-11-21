@@ -46,11 +46,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import android.content.pm.PackageManager
 import android.Manifest
 import androidx.compose.foundation.Canvas
-import android.content.Intent
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.clipFilter
+import android.content.IntentFilter
 import android.os.Build
 import java.text.NumberFormat
 import androidx.compose.foundation.clickable
@@ -358,42 +354,42 @@ fun AutoChantCounterScreen(
                 Image(painterResource(if (isSystemInDarkTheme()) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark),
                     "Bhajame", Modifier.width(96.dp).height(36.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.weight(1f))
-            val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
-            Surface(
-                modifier = Modifier,
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Row(
-                    Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
+                Surface(
+                    modifier = Modifier,
+                    shape = RoundedCornerShape(22.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
-                    Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text(magicCountLabel, style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Switch(
-                        checked = automatic,
-                        modifier = Modifier.semantics { contentDescription = magicCountLabel },
-                        onCheckedChange = { enabled ->
-                            if (!enabled) stopRecognition()
-                            else {
-                                automatic = false
-                                matched = false
-                                matchedCount = 0
-                                transcript = ""
-                                status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
-                                running = false
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                                    microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                                else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                else startService()
+                    Row(
+                        Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(magicCountLabel, style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Switch(
+                            checked = automatic,
+                            modifier = Modifier.semantics { contentDescription = magicCountLabel },
+                            onCheckedChange = { enabled ->
+                                if (!enabled) stopRecognition()
+                                else {
+                                    automatic = false
+                                    matched = false
+                                    matchedCount = 0
+                                    transcript = ""
+                                    status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
+                                    running = false
+                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                                        microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                                    else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    else startService()
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
-            }
             }
             Spacer(Modifier.height(22.dp))
             val malaProgress = if (totalCount > 0 && totalCount % 108 == 0) 108 else totalCount % 108
