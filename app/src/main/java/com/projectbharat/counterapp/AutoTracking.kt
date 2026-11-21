@@ -139,7 +139,7 @@ private fun ProgressGradientCard(
         dark && highlight -> listOf(Color(0xFF523017), Color(0xFF28211E))
         dark -> listOf(Color(0xFF392A23), Color(0xFF242120))
         highlight -> listOf(Color(0xFFFFDEAC), Color(0xFFFFF3DB))
-        else -> listOf(Color(0xFFF7E7D5), Color(0xFFFFFBF4))
+        else -> listOf(Color(0xEEF7E7D5), Color(0xEEFFFBF4))
     }
     Surface(
         modifier = modifier,
@@ -723,6 +723,8 @@ fun JapaReportScreen(
         }
         var shareKind by rememberSaveable { mutableIntStateOf(0) }
         val goalReached = todayCount >= target
+        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))) {
+        Image(painterResource(R.drawable.practice_sunrise), null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
         ProgressGradientCard(Modifier.fillMaxWidth(), highlight = goalReached) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(uiLanguage.text("Today’s goal · All mantras", "आजचे लक्ष्य · सर्व मंत्र", "आज का लक्ष्य · सभी मंत्र"),
@@ -773,6 +775,7 @@ fun JapaReportScreen(
                     Text(if (uiLanguage.isEnglish) "Share image" else uiLanguage.indic("चित्र शेअर करा", "चित्र साझा करें"))
                 } },
                 dismissButton = { TextButton(onClick = { shareKind = 0 }) { Text(if (uiLanguage.isEnglish) "Close" else uiLanguage.indic("बंद करा", "बंद करें")) } })
+        }
         }
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
