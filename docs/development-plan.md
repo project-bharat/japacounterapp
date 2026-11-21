@@ -80,3 +80,8 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 
 - Build #562 includes the bundled sunrise backdrop, system light/dark palette, centered Practice navigation, local achievement milestones, one selectable progress chart, and refreshed Settings grouping and share artwork.
 - Android compilation and unit tests passed. Phone review remains open for layout, accessibility, Bluetooth, share sheets, and migration from Build #559. The remaining detailed design refinements include the full Settings child-page treatment and the agreed KPI order.
+
+### Practice layout review
+
+- Build #566 places Magic Count beside the wordmark, keeps one mantra script visible, adds glass-style metrics and a notched footer, and uses sunrise imagery in the mantra library and goal card. CI compilation and unit tests passed.
+- Phone review is needed for notch alignment, small-screen and large-text spacing, dark contrast, Bluetooth recognition, and the updated images. [Build #566](https://github.com/project-bharat/japacounterapp/actions/runs/44944266158)
