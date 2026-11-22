@@ -85,3 +85,8 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 
 - Build #566 places Magic Count beside the wordmark, keeps one mantra script visible, adds glass-style metrics and a notched footer, and uses sunrise imagery in the mantra library and goal card. CI compilation and unit tests passed.
 - Phone review is needed for notch alignment, small-screen and large-text spacing, dark contrast, Bluetooth recognition, and the updated images. [Build #566](https://github.com/project-bharat/japacounterapp/actions/runs/44944266158)
+
+### Reference comparison
+
+- Refined selected mantra contrast in both system themes and added space around the main mantra and lower controls.
+- The reference comparison used the supplied screenshots and source inspection. Android emulator and physical-device review remain outstanding.

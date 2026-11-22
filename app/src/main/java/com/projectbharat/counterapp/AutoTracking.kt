@@ -415,7 +415,9 @@ fun AutoChantCounterScreen(
                     }
                 }
             }
-            Text(displayMantra(context, categoryId, target, latinMantras), color = if (MaterialTheme.colorScheme.background == Color.White) Color(0xFF38234F) else ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp))
+            Text(displayMantra(context, categoryId, target, latinMantras), color = ink,
+                style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 32.dp))
             val manualInteraction = remember { MutableInteractionSource() }
             val manualPressed by manualInteraction.collectIsPressedAsState()
             val manualScale by animateFloatAsState(if (manualPressed) 0.94f else 1f, label = "japaTapScale")
@@ -505,7 +507,7 @@ fun AutoChantCounterScreen(
                 }
             }
             Column(
-                Modifier.padding(top = 30.dp).widthIn(max = 260.dp).fillMaxWidth(),
+                Modifier.padding(top = 34.dp, bottom = 16.dp).widthIn(max = 260.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -581,9 +583,12 @@ fun AutoChantCounterScreen(
                                 Modifier.padding(start = 8.dp).size(48.dp).clip(RoundedCornerShape(12.dp)),
                                 contentScale = ContentScale.Crop)
                             Column(Modifier.weight(1f).clickable { pendingMantra = item }.padding(12.dp)) {
-                                Text(if (latinMantras) item.latin else item.devanagari, style = MaterialTheme.typography.titleMedium)
+                                Text(if (latinMantras) item.latin else item.devanagari,
+                                    color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.titleMedium)
                             }
-                            if (selected) Icon(Icons.Default.Check, uiLanguage.text("Selected", "निवडलेला", "चुना गया"))
+                            if (selected) Icon(Icons.Default.Check, uiLanguage.text("Selected", "निवडलेला", "चुना गया"),
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer)
                             val favourite = item.devanagari in favourites
                             IconButton(onClick = {
                                 favourites = if (favourite) favourites - item.devanagari else favourites + item.devanagari
@@ -591,7 +596,8 @@ fun AutoChantCounterScreen(
                             }) {
                                 Icon(if (favourite) Icons.Default.Star else Icons.Default.StarBorder,
                                     if (favourite) uiLanguage.text("Remove favourite", "आवडीतून काढा", "पसंदीदा से हटाएँ")
-                                    else uiLanguage.text("Add favourite", "आवडीत जोडा", "पसंदीदा में जोड़ें"))
+                                    else uiLanguage.text("Add favourite", "आवडीत जोडा", "पसंदीदा में जोड़ें"),
+                                    tint = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
