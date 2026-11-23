@@ -8,7 +8,7 @@ android {
     namespace = "com.projectbharat.counterapp"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.projectbharat.counterapp"
+        applicationId = "com.projectbharat.bhajame"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

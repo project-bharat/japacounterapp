@@ -4,7 +4,7 @@ Last updated 21 November 2026. This file is the running project handoff. Read it
 
 ## Product direction
 
-Build a Marathi-first native Android Japa counter with English support. Keep the original Build #528 Japa interface as the visual foundation and make daily practice quick to start, reliable offline, and easy to review. The app uses Kotlin, Jetpack Compose, Room, and WorkManager. The application ID is `com.projectbharat.counterapp`.
+Build a Marathi-first native Android Japa counter with English support. Keep the original Build #528 Japa interface as the visual foundation and make daily practice quick to start, reliable offline, and easy to review. The app uses Kotlin, Jetpack Compose, Room, and WorkManager. The application ID is `com.projectbharat.bhajame`.
 
 Manual counting, local history, reminders, and local backup belong in the free experience. Pro adds private Google Drive backup and sync through a Play subscription, with Room as the local source of truth and no developer-operated backend. Pricing, premium analytics, and any voice allowance are open product decisions.
 
@@ -96,3 +96,8 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Restored the Build #566 screen layout, removed the Settings counter selector and management entry, and select the Japa category on existing installations.
 - Simplified headers to the logo and an icon-only Back control on child screens. Adjusted text and chart colors for light and dark surfaces.
 - Existing non-Japa categories and records remain in the local database and backups. Phone review remains open for both system themes.
+
+### Separate Android application identity
+
+- Bhajame uses `com.projectbharat.bhajame` so it can coexist with the earlier counter app. Its FileProvider authority follows the application ID.
+- Android treats this as a separate installation with separate local data. Use the existing JSON export and restore flow to transfer compatible data from the earlier app when needed. The Play Console listing and OAuth configuration must use this application ID.
