@@ -48,7 +48,7 @@ internal fun JapaAchievements(logs: List<CounterLog>, language: UiLanguage) {
                             else language.text("$target lifetime chants", "$target एकूण जप", "$target कुल जप"),
                             color = Color(0xFF302941), fontWeight = FontWeight.SemiBold)
                         Text(if (earned) language.text("Badge earned", "पदक मिळाले", "बैज मिला")
-                            else "$current / $target", color = Color(0xFF5E5361))
+                            else "$current / $target", color = Color(0xFF514655))
                         LinearProgressIndicator(progress = { (current.toFloat() / target).coerceIn(0f, 1f) },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = Color(0xFFA54E0A))
                     }

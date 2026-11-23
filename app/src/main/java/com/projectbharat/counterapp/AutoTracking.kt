@@ -415,9 +415,7 @@ fun AutoChantCounterScreen(
                     }
                 }
             }
-            Text(displayMantra(context, categoryId, target, latinMantras), color = ink,
-                style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 32.dp))
+            Text(displayMantra(context, categoryId, target, latinMantras), color = if (MaterialTheme.colorScheme.background == Color.White) Color(0xFF38234F) else ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp))
             val manualInteraction = remember { MutableInteractionSource() }
             val manualPressed by manualInteraction.collectIsPressedAsState()
             val manualScale by animateFloatAsState(if (manualPressed) 0.94f else 1f, label = "japaTapScale")
@@ -487,7 +485,7 @@ fun AutoChantCounterScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                                 Text(uiLanguage.text("Preparing offline model…", "ऑफलाइन मॉडेल तयार होत आहे…", "ऑफ़लाइन मॉडल तैयार हो रहा है…"),
-                                    color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
+                                    color = Color(0xFF302941), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                         if (inputRoute != null) Text(
@@ -497,7 +495,7 @@ fun AutoChantCounterScreen(
                                     "हेडसेटचा माइक उपलब्ध नाही · फोनचा माइक वापरत आहे", "हेडसेट माइक उपलब्ध नहीं · फ़ोन का माइक इस्तेमाल हो रहा है")
                                 else -> uiLanguage.text("Device microphone", "उपकरणाचा मायक्रोफोन", "डिवाइस का माइक्रोफ़ोन")
                             },
-                            color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.labelSmall
+                            color = Color(0xFF302941), style = MaterialTheme.typography.labelSmall
                         )
                         if (matched) Text(
                             uiLanguage.text("Mantra matched", "मंत्र जुळला", "मंत्र पहचाना गया") +
@@ -507,7 +505,7 @@ fun AutoChantCounterScreen(
                 }
             }
             Column(
-                Modifier.padding(top = 34.dp, bottom = 16.dp).widthIn(max = 260.dp).fillMaxWidth(),
+                Modifier.padding(top = 30.dp).widthIn(max = 260.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -905,7 +903,7 @@ fun JapaReportScreen(
                 (0..4).map{today.minusDays(it.toLong())}.forEach { date ->
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically) {
                         Text(date.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")),modifier=Modifier.weight(1f),color=ink)
-                        Text(NumberFormat.getIntegerInstance(uiLanguage.locale).format(totalsByDate[date.toString()]?:0),color=Color(0xFF7855A6),fontWeight=FontWeight.Bold)
+                        Text(NumberFormat.getIntegerInstance(uiLanguage.locale).format(totalsByDate[date.toString()]?:0),color=ink,fontWeight=FontWeight.Bold)
                     }
                     if(date!=today.minusDays(4)) Divider(color=ink.copy(alpha=.08f))
                 }
@@ -921,7 +919,7 @@ fun JapaReportScreen(
                             Text(mantraLabel(mantra), color = ink, maxLines = 2)
                             Text(uiLanguage.text("${value / 108} malas", "${value / 108} माळा", "${value / 108} माला"), color = ink.copy(alpha=.55f), style = MaterialTheme.typography.labelSmall)
                         }
-                        Text(NumberFormat.getIntegerInstance(uiLanguage.locale).format(value), color = Color(0xFF7855A6), fontWeight = FontWeight.Bold)
+                        Text(NumberFormat.getIntegerInstance(uiLanguage.locale).format(value), color = ink, fontWeight = FontWeight.Bold)
                     }
                     LinearProgressIndicator(progress = { if (total > 0) value.toFloat() / total else 0f }, modifier = Modifier.fillMaxWidth().height(5.dp), color = Color(0xFF8B69B5), trackColor = MaterialTheme.colorScheme.surfaceVariant)
                 }
@@ -948,8 +946,8 @@ private fun JapaActivityChart(days:List<DayTotal>, mode:String, modifier:Modifie
             drawRoundRect(brush=Brush.verticalGradient(listOf(Color(0xFFFFB660),Color(0xFFB75213)),startY=bottom-h,endY=bottom),topLeft=Offset(i*slot+slot*.2f,bottom-h),size=Size(slot*.6f,h),cornerRadius=androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
         } else {
             val points=days.mapIndexed { i,d -> Offset(i*slot+slot/2,bottom-(bottom-top)*d.total/max) }
-            points.zipWithNext().forEach { (a,b)->drawLine(Color(0xFF7655A5),a,b,strokeWidth=3.dp.toPx()) }
-            points.forEach { drawCircle(Color(0xFF7655A5),4.dp.toPx(),it) }
+            points.zipWithNext().forEach { (a,b)->drawLine(ink,a,b,strokeWidth=3.dp.toPx()) }
+            points.forEach { drawCircle(ink,4.dp.toPx(),it) }
         }
         days.forEachIndexed { i,d -> drawContext.canvas.nativeCanvas.drawText(if(days.size<=7) runCatching{LocalDate.parse(d.date).format(java.time.format.DateTimeFormatter.ofPattern("EEE", uiLanguage.locale))}.getOrDefault("") else runCatching{LocalDate.parse(d.date).dayOfMonth.toString()}.getOrDefault(""),i*slot+slot/2,bottom+17.dp.toPx(),android.graphics.Paint().apply{color=ink.toArgb();textSize=10.dp.toPx();textAlign=android.graphics.Paint.Align.CENTER}) }
     }

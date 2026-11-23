@@ -16,6 +16,7 @@ import android.media.ToneGenerator
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.activity.compose.setContent
@@ -198,7 +199,6 @@ private val Cream = Color(0xFFF5F0E6)
 fun CounterApp(repo: CounterRepository) {
     val vm: CounterViewModel = viewModel(factory = CounterViewModel.Factory(repo))
     val categories by vm.categories.collectAsStateWithLifecycle()
-    val archivedCategories by vm.archivedCategories.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var selectedId by rememberSaveable { mutableLongStateOf(1L) }
     val appPreferences = remember { context.getSharedPreferences("app_preferences", android.content.Context.MODE_PRIVATE) }
@@ -208,7 +208,6 @@ fun CounterApp(repo: CounterRepository) {
 
     val reportState = rememberSaveableStateHolder()
     var remindersScreen by remember { mutableStateOf(false) }
-    var categoryScreen by remember { mutableStateOf(false) }
     var backupScreen by remember { mutableStateOf(false) }
     var voiceModelsDialog by remember { mutableStateOf(false) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
@@ -220,7 +219,6 @@ fun CounterApp(repo: CounterRepository) {
     fun navigate(destination: Int) {
         tab = destination
         monthlyHistory = false
-        categoryScreen = false
         remindersScreen = false
         backupScreen = false
         help = false
@@ -239,7 +237,7 @@ fun CounterApp(repo: CounterRepository) {
     var finishedSession by remember { mutableStateOf<JapaSession?>(null) }
     var finishingSession by remember { mutableStateOf(false) }
     var mantraLibrary by rememberSaveable { mutableStateOf(false) }
-    val child = monthlyHistory || categoryScreen || remindersScreen || backupScreen || help || achievements
+    val child = monthlyHistory || remindersScreen || backupScreen || help || achievements
     fun goBack() {
         when {
             mantraLibrary -> mantraLibrary = false
@@ -302,8 +300,11 @@ fun CounterApp(repo: CounterRepository) {
         }
         activity?.consumeLaunchCounterKind()
     }
-    val selected = categories.firstOrNull { it.id == selectedId } ?: categories.firstOrNull()
-    LaunchedEffect(categories) { if (categories.isNotEmpty() && categories.none { it.id == selectedId }) selectedId = categories.first().id }
+    val selected = categories.firstOrNull { it.kind == "MANTRA" && it.id == selectedId }
+        ?: categories.firstOrNull { it.kind == "MANTRA" }
+    LaunchedEffect(categories) {
+        selected?.let { if (selectedId != it.id) selectedId = it.id }
+    }
 
     LaunchedEffect(selected?.id, selected?.kind) {
         if (selected?.kind == "MANTRA") {
@@ -367,7 +368,7 @@ fun CounterApp(repo: CounterRepository) {
 
     MaterialTheme(colorScheme = scheme) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().background(page)) {
         if (tab == 0 && !child) {
             Image(painterResource(R.drawable.practice_sunrise), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(if (dark)
@@ -421,18 +422,11 @@ fun CounterApp(repo: CounterRepository) {
                     Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (child || mantraLibrary) TextButton(onClick = ::goBack) {
-                        Text(if (uiLanguage.isEnglish) "Back" else uiLanguage.indic("मागे", "वापस"), color = ink)
+                    if (child || mantraLibrary) IconButton(onClick = ::goBack) {
+                        Icon(Icons.Default.ArrowBack, uiLanguage.text("Back", "मागे", "वापस"), tint = ink)
                     }
                     Image(painterResource(if (dark) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark), "Bilan",
                         Modifier.width(96.dp).height(36.dp), contentScale = ContentScale.Fit)
-                    Spacer(Modifier.weight(1f))
-                    Text(when {
-                        mantraLibrary -> uiLanguage.text("Mantra library", "मंत्र संग्रह", "मंत्र संग्रह")
-                        tab == 1 -> if (uiLanguage.isEnglish) "Progress" else uiLanguage.indic("प्रगती", "प्रगति")
-                        tab == 2 -> if (uiLanguage.isEnglish) "Settings" else uiLanguage.indic("सेटिंग्ज", "सेटिंग्स")
-                        else -> if (uiLanguage.isEnglish) "Japa Practice" else "जप साधना"
-                    }, color = ink, style = MaterialTheme.typography.titleMedium)
                 }
                 Box(Modifier.weight(1f)) {
                 if (achievements) {
@@ -444,12 +438,6 @@ fun CounterApp(repo: CounterRepository) {
                         onExportBackup = { jsonExportLauncher.launch("AppBackup_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")) + ".json") },
                         onImportBackup = { jsonImportLauncher.launch(arrayOf("application/json", "text/*")) },
                         onExportCsv = { csvExportLauncher.launch("daily-counter-history.csv") })
-                } else if (categoryScreen) {
-                    CategoryManagementScreen(categories = categories, archivedCategories = archivedCategories, uiLanguage = uiLanguage, ink = ink,
-                        onAdd = { mr, en -> scope.launch { vm.addCategory(mr, en) } },
-                        onUpdate = { item -> scope.launch { vm.updateCategory(item) } },
-                        onArchive = { item -> scope.launch { runCatching { vm.archiveCategory(item.id) }.onFailure { backupMessage = it.message } } },
-                        onRestore = { item -> scope.launch { vm.restoreCategory(item.id) } })
                 } else if (remindersScreen) {
                     ReminderSettingsScreen(uiLanguage = uiLanguage, ink = ink)
                 } else if (monthlyHistory && selected != null) {
@@ -513,11 +501,7 @@ fun CounterApp(repo: CounterRepository) {
                         onReminders = { remindersScreen = true },
                         onModels = { voiceModelsDialog = true },
                         onBackup = { backupScreen = true },
-                        onCounters = { categoryScreen = true },
-                        onHelp = { help = true },
-                        counterNames = categories.map { if (uiLanguage.isEnglish) it.titleEn else it.titleMr },
-                        selectedCounter = categories.indexOfFirst { it.id == selected?.id },
-                        onCounter = { index -> selectedId = categories[index].id; navigate(0) }
+                        onHelp = { help = true }
                     )
                 } else if (selected?.kind == "MANTRA") {
                     AutoChantCounterScreen(
@@ -742,15 +726,16 @@ private fun StatTile(label: String, value: String, ink: Color, modifier: Modifie
 
 @Composable
 fun WeeklyChart(days: List<DayTotal>, modifier: Modifier = Modifier) {
+    val chartInk = MaterialTheme.colorScheme.onSurface
     val maxValue=(days.maxOfOrNull{it.total} ?: 0).coerceAtLeast(1)
     Row(modifier, horizontalArrangement=Arrangement.spacedBy(6.dp), verticalAlignment=Alignment.Bottom) {
         days.forEach { day ->
             Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Bottom) {
-                Text(day.total.toString(),color=Navy,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
+                Text(day.total.toString(),color=chartInk,style=MaterialTheme.typography.labelSmall,fontWeight=FontWeight.Bold)
                 Spacer(Modifier.height(5.dp))
                 Box(Modifier.fillMaxWidth(.72f).weight(1f,false).height((145f*day.total/maxValue).coerceAtLeast(if(day.total>0) 8f else 3f).dp).clip(RoundedCornerShape(topStart=8.dp,topEnd=8.dp)).background(if(day.total==maxValue) Gold else Color(0xFF9BB6D3)))
                 Spacer(Modifier.height(7.dp))
-                Text(day.date.takeLast(2),color=Navy.copy(alpha=.65f),style=MaterialTheme.typography.labelSmall)
+                Text(day.date.takeLast(2),color=chartInk.copy(alpha=.8f),style=MaterialTheme.typography.labelSmall)
             }
         }
     }

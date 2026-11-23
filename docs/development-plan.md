@@ -90,3 +90,9 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 
 - Refined selected mantra contrast in both system themes and added space around the main mantra and lower controls.
 - The reference comparison used the supplied screenshots and source inspection. Android emulator and physical-device review remain outstanding.
+
+### Single Japa counter and Build #566 layout
+
+- Restored the Build #566 screen layout, removed the Settings counter selector and management entry, and select the Japa category on existing installations.
+- Simplified headers to the logo and an icon-only Back control on child screens. Adjusted text and chart colors for light and dark surfaces.
+- Existing non-Japa categories and records remain in the local database and backups. Phone review remains open for both system themes.

@@ -24,8 +24,7 @@ internal fun JapaSettingsScreen(
     uiLanguage: UiLanguage, tap: Boolean, mala: Boolean, sound: Boolean,
     latinMantras: Boolean, onLanguage: (UiLanguage) -> Unit, onMantraScript: (Boolean) -> Unit, onTap: (Boolean) -> Unit, onMala: (Boolean) -> Unit,
     onSound: (Boolean) -> Unit, onReminders: () -> Unit, onModels: () -> Unit,
-    onBackup: () -> Unit, onCounters: () -> Unit, onHelp: () -> Unit,
-    counterNames: List<String>, selectedCounter: Int, onCounter: (Int) -> Unit
+    onBackup: () -> Unit, onHelp: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -46,12 +45,6 @@ internal fun JapaSettingsScreen(
             SettingsLink(if (uiLanguage.isEnglish) "Reminders" else uiLanguage.indic("स्मरणपत्रे", "अनुस्मारक"), onReminders)
             SettingsLink(if (uiLanguage.isEnglish) "Offline voice models" else uiLanguage.indic("ऑफलाइन आवाज मॉडेल", "ऑफ़लाइन आवाज़ मॉडल"), onModels)
             SettingsLink(if (uiLanguage.isEnglish) "Backup & sync" else uiLanguage.indic("बॅकअप व सिंक", "बैकअप और सिंक"), onBackup)
-        }
-        SettingsGroup(if (uiLanguage.isEnglish) "Counters" else uiLanguage.indic("मोजण्या", "काउंटर")) {
-            counterNames.forEachIndexed { index, name ->
-                SettingsLink(if (index == selectedCounter) "$name ✓" else name) { onCounter(index) }
-            }
-            SettingsLink(if (uiLanguage.isEnglish) "Manage counters" else uiLanguage.indic("मोजणी व्यवस्थापन", "काउंटर प्रबंधन"), onCounters)
         }
         SettingsGroup(if (uiLanguage.isEnglish) "Support" else uiLanguage.indic("मदत", "सहायता")) {
             SettingsLink(if (uiLanguage.isEnglish) "Help & About" else uiLanguage.indic("मदत व अॅपची माहिती", "सहायता और ऐप की जानकारी"), onHelp)
