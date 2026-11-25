@@ -36,7 +36,7 @@ internal fun JapaAchievements(logs: List<CounterLog>, language: UiLanguage) {
         listOf(7, 30, 108).map { Triple(it, best, true) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(language.text("Your japa journey", "तुमची जप साधना", "आपकी जप यात्रा"),
-            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         milestones.forEach { (target, current, streak) ->
             val earned = current >= target
             Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),

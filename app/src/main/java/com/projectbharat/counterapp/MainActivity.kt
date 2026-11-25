@@ -209,6 +209,7 @@ fun CounterApp(repo: CounterRepository) {
     var monthlyHistory by remember { mutableStateOf(false) }
 
     val reportState = rememberSaveableStateHolder()
+    val settingsState = rememberSaveableStateHolder()
     var remindersScreen by remember { mutableStateOf(false) }
     var backupScreen by remember { mutableStateOf(false) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
@@ -391,11 +392,11 @@ fun CounterApp(repo: CounterRepository) {
             bottomBar = {
                 if (!mantraLibrary && !child) {
                     val shape = RoundedCornerShape(36.dp)
-                    val footerColor = if (dark) Color(0x992D294B) else Color(0xCFFEF9ED)
+                    val footerColor = if (dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
                     val footerInk = if (dark) Color(0xFFFFF6E5) else ink
                     val accent = if (dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
                     Box(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Row(Modifier.fillMaxWidth(.86f).widthIn(max = 340.dp).shadow(12.dp, shape).clip(shape)
+                        Row(Modifier.fillMaxWidth(.92f).widthIn(max = 360.dp).shadow(12.dp, shape).clip(shape)
                             .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             listOf(1, 0, 2).forEach { index ->
@@ -416,8 +417,6 @@ fun CounterApp(repo: CounterRepository) {
                                     Icon(painterResource(icon), null, Modifier.size(26.dp), tint = if (tab == index) accent else footerInk)
                                     Text(label, color = if (tab == index) accent else footerInk,
                                         style = MaterialTheme.typography.labelSmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.None))
-                                    Spacer(Modifier.height(5.dp))
-                                    Box(Modifier.width(36.dp).height(3.dp).background(if (tab == index) Color(0xFFFEF5D8) else Color.Transparent, CircleShape))
                                 }
                             }
                         }
@@ -427,7 +426,7 @@ fun CounterApp(repo: CounterRepository) {
             }
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
-                if (tab != 0 || child || mantraLibrary) Row(
+                if (child || mantraLibrary) Row(
                     Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -503,6 +502,7 @@ fun CounterApp(repo: CounterRepository) {
                         }
                     }
                 } else if (tab == 2) {
+                    settingsState.SaveableStateProvider("japa-settings") {
                     JapaSettingsScreen(
                         uiLanguage, tapFeedback, malaFeedback, soundFeedback,
                         latinMantras = latinMantras,
@@ -526,6 +526,7 @@ fun CounterApp(repo: CounterRepository) {
                         onBackup = { backupScreen = true },
                         onHelp = { help = true }
                     )
+                    }
                 } else if (selected?.kind == "MANTRA") {
                     AutoChantCounterScreen(
                         categoryId = selected.id, count = count, totalCount = mantraTotal, uiLanguage = uiLanguage, ink = ink,
@@ -627,6 +628,12 @@ fun CounterApp(repo: CounterRepository) {
         confirmButton = { TextButton(onClick = { scope.launch { selected?.let { vm.reset(it.id) } }; resetDialog = false }) { Text(if (uiLanguage.isEnglish) "Reset" else "रीसेट") } },
         dismissButton = { TextButton(onClick = { resetDialog = false }) { Text(if (uiLanguage.isEnglish) "Cancel" else uiLanguage.indic("रद्द", "रद्द करें")) } })
     }
+}
+
+@Composable
+internal fun AppScrollingHeader() {
+    Image(painterResource(R.drawable.bilan_header_logo_light), "Bhajame",
+        Modifier.padding(top = 20.dp, bottom = 26.dp).width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
 }
 
 @Composable

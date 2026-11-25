@@ -149,3 +149,11 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Added monthly and yearly targets to a version-10 Room table, non-destructive 9→10 migration, atomic goal saving and compatible optional JSON backup/restore records. Progress displays the current month and year totals. Full device upgrade, rollback and backup round-trip testing remains required.
 - Added a clearly labelled Pro plan preview (monthly/yearly/lifetime); it does not sell subscriptions or claim Google Drive is working. Billing, pricing, entitlement verification and Drive remain separate work. Share cards include the requested developer credit.
 - Voice recognition still uses the unrestricted offline model with finalized whole-phrase matching. Real-time partial counting and improved recognition are not yet verified: accepting unstable partial hypotheses can double count or repeat the false positives reported in Build #574. Requires recorded real-device test corpus and further model evaluation before enabling.
+
+
+### Settings and navigation refinement (after Build #578)
+
+- Restored the prior floating footer, moved root Progress and Settings wordmarks into their scrollable content, and retained saveable tab state.
+- Added icon-led settings sections and capsule links, centered the developer credit on the background, and changed social links to accessible icon buttons. WhatsApp and Instagram SVG paths are from Simple Icons (CC0); the LinkedIn glyph is a simple in-house vector.
+- Added contrast for the achievement heading, icon-led Progress cards and capsule goal actions, and a single labelled, accessible Magic Count toggle. Counting and permission handling remain unchanged.
+- Phone verification pending for TalkBack switch semantics, long translations and large fonts, logo scrolling and tab state, contrast across backgrounds, social link handlers, and Magic Count permissions.

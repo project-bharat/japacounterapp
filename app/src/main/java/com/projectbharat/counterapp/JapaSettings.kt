@@ -7,7 +7,14 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Dialog
@@ -34,15 +41,16 @@ internal fun JapaSettingsScreen(
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SettingsGroup(if (uiLanguage.isEnglish) "Practice preferences" else uiLanguage.indic("जप प्राधान्ये", "जप की प्राथमिकताएँ")) {
-            PreferenceSwitch(if (uiLanguage.isEnglish) "Tap vibration" else uiLanguage.indic("स्पर्श कंपन", "टैप पर कंपन"), tap, onTap)
-            PreferenceSwitch(if (uiLanguage.isEnglish) "Mala completion vibration" else uiLanguage.indic("माळ पूर्ण झाल्यावर कंपन", "माला पूरी होने पर कंपन"), mala, onMala)
-            PreferenceSwitch(if (uiLanguage.isEnglish) "Tap sound" else uiLanguage.indic("स्पर्श ध्वनी", "टैप की ध्वनि"), sound, onSound)
+        AppScrollingHeader()
+        SettingsGroup(if (uiLanguage.isEnglish) "Practice preferences" else uiLanguage.indic("जप प्राधान्ये", "जप की प्राथमिकताएँ"), Icons.Default.SelfImprovement) {
+            PreferenceSwitch(if (uiLanguage.isEnglish) "Tap vibration" else uiLanguage.indic("स्पर्श कंपन", "टैप पर कंपन"), tap, onTap, Icons.Default.Vibration)
+            PreferenceSwitch(if (uiLanguage.isEnglish) "Mala completion vibration" else uiLanguage.indic("माळ पूर्ण झाल्यावर कंपन", "माला पूरी होने पर कंपन"), mala, onMala, Icons.Default.NotificationsActive)
+            PreferenceSwitch(if (uiLanguage.isEnglish) "Tap sound" else uiLanguage.indic("स्पर्श ध्वनी", "टैप की ध्वनि"), sound, onSound, Icons.Default.VolumeUp)
         }
-        SettingsGroup(uiLanguage.text("Appearance", "देखावा", "दिखावट")) {
-            SettingsLink(uiLanguage.text("Themes", "थीम", "थीम") + " · " + themeName, onThemes)
+        SettingsGroup(uiLanguage.text("Appearance", "देखावा", "दिखावट"), Icons.Default.Palette) {
+            SettingsLink(uiLanguage.text("Themes", "थीम", "थीम") + " · " + themeName, onThemes, Icons.Default.Wallpaper)
         }
-        SettingsGroup(uiLanguage.text("Language", "भाषा", "भाषा")) {
+        SettingsGroup(uiLanguage.text("Language", "भाषा", "भाषा"), Icons.Default.Translate) {
             SettingsDropdown(if (uiLanguage.isEnglish) "App language" else uiLanguage.indic("अॅपची भाषा", "ऐप की भाषा"),
                 UiLanguage.entries.map { it.label }, uiLanguage.ordinal) { onLanguage(UiLanguage.entries[it]) }
             SettingsDropdown(if (uiLanguage.isEnglish) "Mantra display script" else uiLanguage.indic("मंत्राची लिपी", "मंत्र की लिपि"),
@@ -50,13 +58,13 @@ internal fun JapaSettingsScreen(
                 else listOf("देवनागरी", uiLanguage.indic("इंग्रजी लिपी", "अंग्रेज़ी लिपि")),
                 if (latinMantras) 1 else 0) { onMantraScript(it == 1) }
         }
-        SettingsGroup(if (uiLanguage.isEnglish) "Reminders and data" else uiLanguage.indic("स्मरणपत्रे व डेटा", "अनुस्मारक और डेटा")) {
-            SettingsLink(if (uiLanguage.isEnglish) "Reminders" else uiLanguage.indic("स्मरणपत्रे", "अनुस्मारक"), onReminders)
+        SettingsGroup(if (uiLanguage.isEnglish) "Reminders and data" else uiLanguage.indic("स्मरणपत्रे व डेटा", "अनुस्मारक और डेटा"), Icons.Default.CloudQueue) {
+            SettingsLink(if (uiLanguage.isEnglish) "Reminders" else uiLanguage.indic("स्मरणपत्रे", "अनुस्मारक"), onReminders, Icons.Default.Notifications)
             AiVoiceDetectorStatus(uiLanguage, onModels)
-            SettingsLink(if (uiLanguage.isEnglish) "Backup & sync" else uiLanguage.indic("बॅकअप व सिंक", "बैकअप और सिंक"), onBackup)
+            SettingsLink(if (uiLanguage.isEnglish) "Backup & sync" else uiLanguage.indic("बॅकअप व सिंक", "बैकअप और सिंक"), onBackup, Icons.Default.Backup)
         }
-        SettingsGroup(if (uiLanguage.isEnglish) "Support" else uiLanguage.indic("मदत", "सहायता")) {
-            SettingsLink(if (uiLanguage.isEnglish) "Help & About" else uiLanguage.indic("मदत व अॅपची माहिती", "सहायता और ऐप की जानकारी"), onHelp)
+        SettingsGroup(if (uiLanguage.isEnglish) "Support" else uiLanguage.indic("मदत", "सहायता"), Icons.Default.FavoriteBorder) {
+            SettingsLink(if (uiLanguage.isEnglish) "Help & About" else uiLanguage.indic("मदत व अॅपची माहिती", "सहायता और ऐप की जानकारी"), onHelp, Icons.Default.Info)
         }
         DeveloperCard(uiLanguage)
         Spacer(Modifier.height(12.dp))
@@ -70,7 +78,8 @@ private fun SettingsDropdown(title: String, options: List<String>, index: Int, o
         OutlinedButton(
             onClick = { expanded = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0x663D3963), contentColor = Color(0xFFD6EBEE)),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
         ) {
             Column(Modifier.weight(1f)) {
@@ -91,31 +100,40 @@ private fun SettingsDropdown(title: String, options: List<String>, index: Int, o
 }
 
 @Composable
-internal fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+internal fun SettingsGroup(title: String, icon: ImageVector? = null, content: @Composable ColumnScope.() -> Unit) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = brandGlassColor(), contentColor = MaterialTheme.colorScheme.onSurface),
         border = androidx.compose.foundation.BorderStroke(1.dp, brandGlassBorder())) {
-        Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(Modifier.padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (icon != null) Box(Modifier.size(34.dp).background(Color(0x554F7191), CircleShape), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, Modifier.size(19.dp), tint = Color(0xFFD3EAED))
+                }
+                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            }
             content()
         }
     }
 }
 
 @Composable
-internal fun SettingsLink(title: String, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onClick).padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-        Text("›", color = MaterialTheme.colorScheme.onSurface)
+internal fun SettingsLink(title: String, onClick: () -> Unit, icon: ImageVector? = null) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 3.dp).background(Color(0x443D3963), RoundedCornerShape(50))
+        .heightIn(min = 52.dp).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (icon != null) Icon(icon, null, Modifier.size(20.dp), tint = Color(0xFFB7D1D9))
+        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-internal fun PreferenceSwitch(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
+internal fun PreferenceSwitch(title: String, checked: Boolean, onChange: (Boolean) -> Unit, icon: ImageVector? = null) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (icon != null) Icon(icon, null, Modifier.size(20.dp), tint = Color(0xFFB7D1D9))
+        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
         Switch(checked, onChange)
     }
 }
@@ -161,7 +179,10 @@ internal fun AiVoiceDetectorStatus(language: UiLanguage, onRetry: () -> Unit) {
     val progress = info?.progress?.getInt("progress", 0) ?: 0
     val downloading = info?.state == WorkInfo.State.RUNNING || info?.state == WorkInfo.State.ENQUEUED
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Text(language.text("AI Voice Detector", "एआय आवाज ओळख", "एआई आवाज़ पहचान"), color = MaterialTheme.colorScheme.onSurface)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Default.Mic, null, Modifier.size(20.dp), tint = Color(0xFFB7D1D9))
+            Text(language.text("AI Voice Detector", "एआय आवाज ओळख", "एआई आवाज़ पहचान"), color = MaterialTheme.colorScheme.onSurface)
+        }
         val label = when {
             installed -> language.text("Ready", "तयार", "तैयार")
             downloading && progress > 0 -> language.text("Downloading · $progress%", "डाउनलोड होत आहे · $progress%", "डाउनलोड हो रहा है · $progress%")
@@ -178,13 +199,20 @@ internal fun AiVoiceDetectorStatus(language: UiLanguage, onRetry: () -> Unit) {
 internal fun DeveloperCard(language: UiLanguage) {
     val context = LocalContext.current
     fun open(uri: String) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri))) } }
-    SettingsGroup(language.text("Designed & developed by", "संकल्पना व विकास", "परिकल्पना और विकास")) {
-        Text("Bharat Rasve", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-        Text("+91 72188 38122", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            TextButton(onClick = { open("https://wa.me/917218838122") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("WhatsApp") }
-            TextButton(onClick = { open("https://www.linkedin.com/in/bharatrasve") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("LinkedIn") }
-            TextButton(onClick = { open("https://www.instagram.com/bharat_rasve_?r=nametag") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Instagram") }
+    val contrast = MaterialTheme.typography.bodySmall.copy(shadow = Shadow(Color(0xFF17132D), Offset(1f, 2f), 7f))
+    Column(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 20.dp), horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(language.text("Designed & developed by", "संकल्पना व विकास", "परिकल्पना और विकास"), color = Color(0xFFFEF5E6), style = contrast)
+        Text("Bharat Rasve", color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleMedium.copy(shadow = contrast.shadow), fontWeight = FontWeight.Bold)
+        Text("+91 72188 38122", color = Color(0xFFFEF5E6), style = contrast)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            listOf(Triple(R.drawable.ic_social_whatsapp, "WhatsApp", "https://wa.me/917218838122"),
+                Triple(R.drawable.ic_social_linkedin, "LinkedIn", "https://www.linkedin.com/in/bharatrasve"),
+                Triple(R.drawable.ic_social_instagram, "Instagram", "https://www.instagram.com/bharat_rasve_?r=nametag")).forEach { (icon, label, url) ->
+                IconButton(onClick = { open(url) }, modifier = Modifier.size(48.dp).background(Color(0xAA282442), CircleShape)) {
+                    Icon(painterResource(icon), contentDescription = label, modifier = Modifier.size(22.dp), tint = Color(0xFFFEF5E6))
+                }
+            }
         }
     }
 }

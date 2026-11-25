@@ -55,6 +55,8 @@ import androidx.compose.foundation.Canvas
 import android.content.IntentFilter
 import android.os.Build
 import java.text.NumberFormat
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -85,6 +87,9 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.FilledTonalButton
@@ -200,6 +205,31 @@ internal fun displayMantra(context: Context, categoryId: Long, target: String, l
         .firstOrNull { it.size == 2 && (it[0] == target || it[1].equals(target, ignoreCase = true)) }
     return if (latin) pair?.get(1) ?: preset?.latin ?: target
         else pair?.get(0) ?: preset?.devanagari ?: target
+}
+
+@Composable
+private fun MagicCountSwitch(checked: Boolean, label: String, onCheckedChange: (Boolean) -> Unit) {
+    val track = if (checked) Color(0xFFCADFE2) else Color(0xFF302B54)
+    val labelColor = if (checked) Color(0xFF302B54) else Color(0xFFFEF5E6)
+    Row(Modifier.heightIn(min = 48.dp).widthIn(max = 210.dp)
+        .shadow(5.dp, RoundedCornerShape(50)).background(track, RoundedCornerShape(50))
+        .border(1.dp, Color(0xAA94B5C2), RoundedCornerShape(50))
+        .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+        .padding(4.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (!checked) MagicCountThumb()
+        Text(label, style = MaterialTheme.typography.labelMedium, color = labelColor, maxLines = 2,
+            modifier = Modifier.weight(1f, fill = false).padding(horizontal = 2.dp))
+        if (checked) MagicCountThumb()
+    }
+}
+
+@Composable
+private fun MagicCountThumb() {
+    Box(Modifier.size(38.dp).shadow(3.dp, CircleShape).background(Color(0xFFFEF5D8), CircleShape),
+        contentAlignment = Alignment.Center) {
+        Icon(Icons.Default.AutoAwesome, null, Modifier.size(21.dp), tint = Color(0xFF423C6D))
+    }
 }
 
 @Composable
@@ -360,27 +390,19 @@ fun AutoChantCounterScreen(
                     "Bhajame", Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.weight(1f))
                 val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
-                Row(Modifier.background(Color(0x663D3963), RoundedCornerShape(50)).border(1.dp, Color(0x6694B5C2), RoundedCornerShape(50)).padding(start = 10.dp, end = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(magicCountLabel, style = MaterialTheme.typography.labelLarge, color = Color(0xFFFEF5E6))
-                    Switch(
-                        checked = automatic,
-                        thumbContent = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(15.dp), tint = Color(0xFF423C6D)) },
-                        modifier = Modifier.semantics { contentDescription = magicCountLabel },
-                        onCheckedChange = { enabled ->
-                            if (!enabled) stopRecognition()
-                            else {
-                                automatic = false
-                                recognizedText = ""
-                                status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
-                                running = false
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                                    microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                                else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                else startService()
-                            }
-                        }
-                    )
+                MagicCountSwitch(automatic, magicCountLabel) { enabled ->
+                    if (!enabled) stopRecognition()
+                    else {
+                        automatic = false
+                        recognizedText = ""
+                        status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
+                        running = false
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                            microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                        else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        else startService()
+                    }
                 }
             }
             Spacer(Modifier.height(22.dp))
@@ -736,6 +758,7 @@ fun JapaReportScreen(
     val monthCells: List<Int?> = (0 until 42).map { cell -> (cell - offset + 1).takeIf { it in 1..monthDays } }
     val mantraBreakdown = logs.groupBy { it.note.orEmpty().removePrefix("MANTRA:") }.mapValues { (_, rows) -> rows.sumOf { it.count } }.entries.sortedByDescending { it.value }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        AppScrollingHeader()
         val context = LocalContext.current
         val target = japaGoalOn(goals, today)
         val remaining = (target - todayCount).coerceAtLeast(0)
@@ -747,16 +770,25 @@ fun JapaReportScreen(
         val goalReached = todayCount >= target
         ProgressGradientCard(Modifier.fillMaxWidth(), highlight = goalReached) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(uiLanguage.text("Today’s goal · All mantras", "आजचे लक्ष्य · सर्व मंत्र", "आज का लक्ष्य · सभी मंत्र"),
-                    style = MaterialTheme.typography.titleMedium, color = ink)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Flag, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(uiLanguage.text("Today’s goal · All mantras", "आजचे लक्ष्य · सर्व मंत्र", "आज का लक्ष्य · सभी मंत्र"),
+                        style = MaterialTheme.typography.titleMedium, color = ink)
+                }
                 Text("$todayCount / $target", style = MaterialTheme.typography.headlineLarge, color = ink, fontWeight = FontWeight.Bold)
                 Text(if (goalReached) uiLanguage.text("✓ Goal reached", "✓ लक्ष्य पूर्ण", "✓ लक्ष्य पूरा")
                     else uiLanguage.text("$remaining remaining", "$remaining बाकी", "$remaining बाकी"), color = ink)
                 LinearProgressIndicator(progress = { (todayCount.toFloat() / target).coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
-                Row {
-                    TextButton(onClick = onEditGoal) { Text(uiLanguage.text("Edit goal", "लक्ष्य बदला", "लक्ष्य बदलें")) }
-                    TextButton(onClick = { shareKind = 1 }) { Text(uiLanguage.text("Share", "शेअर करा", "साझा करें")) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(onClick = onEditGoal, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        Icon(Icons.Default.Edit, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                        Text(uiLanguage.text("Edit goal", "लक्ष्य बदला", "लक्ष्य बदलें"))
+                    }
+                    FilledTonalButton(onClick = { shareKind = 1 }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        Icon(Icons.Default.Share, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp))
+                        Text(uiLanguage.text("Share", "शेअर करा", "साझा करें"))
+                    }
                 }
             }
         }
@@ -775,8 +807,11 @@ fun JapaReportScreen(
         val monthlyTotal = totalsByDate.filterKeys { it.startsWith(today.toString().take(7)) }.values.sum()
         ProgressGradientCard(Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(uiLanguage.text("Personal milestone", "वैयक्तिक टप्पा", "व्यक्तिगत उपलब्धि"),
-                    style = MaterialTheme.typography.titleMedium, color = ink)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.EmojiEvents, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Text(uiLanguage.text("Personal milestone", "वैयक्तिक टप्पा", "व्यक्तिगत उपलब्धि"),
+                        style = MaterialTheme.typography.titleMedium, color = ink)
+                }
                 Text("$total / $milestone", style = MaterialTheme.typography.headlineMedium,
                     color = ink, fontWeight = FontWeight.Bold)
                 Text(uiLanguage.text("Lifetime chants", "आजवरचे जप", "अब तक के जप"), color = ink)
@@ -810,6 +845,8 @@ fun JapaReportScreen(
         Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.BarChart, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
                     Text(if (uiLanguage.isEnglish) "PROGRESS ANALYTICS" else uiLanguage.indic("जप प्रगती विश्लेषण", "जप प्रगति का विश्लेषण"), color = ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                     SegmentedButtonRowCompat(chartMode, listOf("BAR","LINE"), { chartMode=it }, uiLanguage)
                 }
