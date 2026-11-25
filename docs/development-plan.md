@@ -126,3 +126,10 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Practice shows a pulsing microphone and live recognition text below Listening. The larger mantra animation remains driven by actual tap and counted voice events.
 - Added a low-contrast mandala pattern inside the gradient counter and replaced the action panel with individual translucent buttons, farther down the scroll.
 - Device verification pending for light/dark system settings, transcript accuracy and script display, microphone permissions and Bluetooth, rapid counting, accessibility, scrolling and visual contrast.
+
+
+### Voice matching and contrast correction (after Build #574)
+
+- Replaced the mantra-constrained Vosk grammar with the model's unrestricted decoder: a tiny target grammar could turn unrelated speech into the target phrase. Count only complete, non-overlapping token matches from finalized results; display partial hypotheses without persisting them. Preserve Devanagari vowel marks and normalize the equivalent ॐ/ओम spelling. Removed partial-mantra and fuzzy matching.
+- Added JVM tests for unrelated speech, word boundaries, complete long mantras, repeated chants and Devanagari marks. Recognition remains probabilistic: device tests must check false positives and missed chants, particularly model limitations, long continuous chanting, Bluetooth, end-of-session and final-result latency.
+- Fixed settings content contrast; gave the mantra library the dark brand background, refined mandala, status colors, footer and Marathi/Hindi app labels. Exact Devanagari spelling of the brand is recorded as भजमे for review.

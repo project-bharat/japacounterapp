@@ -27,7 +27,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import org.json.JSONArray
 import org.json.JSONObject
 import org.vosk.Model
 import org.vosk.Recognizer
@@ -38,7 +37,6 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
-import java.util.Locale
 import java.util.zip.ZipInputStream
 
 const val TRACKING_STATE_CHANGED = "com.projectbharat.counterapp.TRACKING_STATE_CHANGED"
@@ -93,7 +91,7 @@ private object VoskModelCache {
     }
 }
 
-/** Keep the grammar-specific recognizer warm across pause/resume toggles. */
+/** Keep the unrestricted recognizer warm across pause/resume toggles. */
 private object VoskRecognizerCache {
     private var cachedKey: String? = null
     private var cachedModelPath: String? = null
@@ -113,13 +111,13 @@ private object VoskRecognizerCache {
     }
 
     @Synchronized
-    fun get(model: Model, modelPath: String, key: String, grammar: String): Recognizer {
+    fun get(model: Model, modelPath: String, key: String): Recognizer {
         if (cachedKey == key && cachedRecognizer != null) {
             cachedRecognizer!!.reset()
             return cachedRecognizer!!
         }
         cachedRecognizer?.close()
-        val next = Recognizer(model, 16000.0f, grammar)
+        val next = Recognizer(model, 16000.0f)
         cachedRecognizer = next
         cachedKey = key
         cachedModelPath = modelPath
@@ -139,7 +137,6 @@ class ChantRecognitionService : Service() {
     private var categoryId = -1L
     private var mantra = "Ram"
     private val language = "hi"
-    private var partialCounted = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_PAUSE_CHANT) { pauseRecognition(); return START_NOT_STICKY }
@@ -193,7 +190,6 @@ class ChantRecognitionService : Service() {
                 synchronized(recognitionLock) {
                     if (!Thread.currentThread().isInterrupted) {
                         stopRequested = false
-                        partialCounted = 0
                         runRecognition(voiceCategoryId, voiceMantra, recognitionPhrase, language, voiceStartedAt)
                     }
                 }
@@ -224,40 +220,9 @@ class ChantRecognitionService : Service() {
             })
             VoskRecognizerCache.clearForModelChange(modelDir.absolutePath)
             model = VoskModelCache.get(modelDir)
-            val cleanMantra = phrase.replace(Regex("[।॥,;]"), " ").replace(Regex("\\s+"), " ").trim()
-            val grammarPhrases = linkedSetOf(phrase, cleanMantra)
-            // Allow consecutive repetitions to be decoded as one continuous utterance.
-            if (cleanMantra.split(" ").size <= 14) {
-                grammarPhrases.add("$cleanMantra $cleanMantra")
-                grammarPhrases.add("$cleanMantra $cleanMantra $cleanMantra")
-            }
-            if (language == "hi") {
-                grammarPhrases.add(cleanMantra.replace("ॐ", "ओम").replace("नमः", "नम"))
-                grammarPhrases.add(cleanMantra.replace("त्र्यम्बकं", "त्र्यंबकं"))
-                // Hindi Vosk commonly alternates anusvara spellings and joins Sanskrit compounds.
-                if (cleanMantra.contains("दिगंबरा") || cleanMantra.contains("दिगम्बरा")) {
-                    // Short phrase alternatives help the small Hindi model retain repeated opening words.
-                    grammarPhrases.add("दिगंबरा")
-                    grammarPhrases.add("दिगम्बरा")
-                    grammarPhrases.add("दिगंबरा दिगंबरा")
-                    grammarPhrases.add("दिगम्बरा दिगम्बरा")
-                    grammarPhrases.add("श्रीपाद वल्लभ")
-                    grammarPhrases.add("श्रीपादवल्लभ")
-                    grammarPhrases.add("दिगंबरा दिगंबरा श्रीपाद वल्लभ दिगंबरा")
-                    grammarPhrases.add("दिगम्बरा दिगम्बरा श्रीपाद वल्लभ दिगम्बरा")
-                    grammarPhrases.add(cleanMantra.replace("दिगंबरा", "दिगम्बरा"))
-                    grammarPhrases.add(cleanMantra.replace("दिगंबरा", "दिगम्बरा").replace("श्रीपाद वल्लभ", "श्रीपादवल्लभ"))
-                    grammarPhrases.add(cleanMantra.replace("श्रीपाद वल्लभ", "श्रीपादवल्लभ"))
-                }
-            } else {
-                grammarPhrases.add(cleanMantra.replace("Aum", "Om").replace("aum", "om"))
-                grammarPhrases.add(cleanMantra.replace("Shivaaya", "Shivaya").replace("shivaaya", "shivaya"))
-            }
-            val grammarJson = JSONArray()
-            grammarPhrases.forEach { grammarJson.put(it) }
-            grammarJson.put("[unk]")
-            val grammar = grammarJson.toString()
-            recognizer = VoskRecognizerCache.get(model!!, modelDir.absolutePath, recognizerKey, grammar)
+            // A mantra-only grammar can force unrelated speech into the selected phrase.
+            // Decode with the model's full vocabulary, then match complete phrases.
+            recognizer = VoskRecognizerCache.get(model!!, modelDir.absolutePath, recognizerKey)
             val audioManager = requireNotNull(getSystemService(AudioManager::class.java))
             if (audioManager.mode == AudioManager.MODE_IN_CALL) {
                 throw IllegalStateException("Microphone busy — another app or call is using it")
@@ -321,19 +286,15 @@ class ChantRecognitionService : Service() {
                     if (samples == 0) continue
                     if (activeRecognizer.acceptWaveForm(pcm, samples)) {
                         val transcript = JSONObject(activeRecognizer.result ?: "{}").optString("text").trim()
-                        val matches = countPhrase(transcript, phrase)
-                        val delta = (matches - partialCounted).coerceAtLeast(0)
-                        partialCounted = 0
-                        sendRecognitionUpdate(transcript, delta, voiceCategoryId, mantra, phrase, voiceStartedAt)
+                        val matches = MantraMatcher.count(transcript, phrase)
+                        sendRecognitionUpdate(transcript, matches, voiceCategoryId, mantra, phrase, voiceStartedAt)
                         lastPartial = ""
                     } else {
                         val partial = JSONObject(activeRecognizer.partialResult ?: "{}").optString("partial").trim()
                         if (partial != lastPartial) {
                             lastPartial = partial
-                            val detected = countPhrase(partial, phrase)
-                            val delta = (detected - partialCounted).coerceAtLeast(0)
-                            if (detected > partialCounted) partialCounted = detected
-                            sendRecognitionUpdate(partial, delta, voiceCategoryId, mantra, phrase, voiceStartedAt)
+                            // Partial hypotheses may be revised; show them without saving counts.
+                            sendState(true, "Listening offline", partial, false)
                         }
                     }
                 }
@@ -374,7 +335,7 @@ class ChantRecognitionService : Service() {
     private fun sendRecognitionUpdate(
         transcript: String, matches: Int, voiceCategoryId: Long, voiceMantra: String, phrase: String, voiceStartedAt: Long
     ) {
-        val matched = matches > 0 || countPhrase(transcript, phrase) > 0
+        val matched = matches > 0 || MantraMatcher.count(transcript, phrase) > 0
         val countedAt = System.currentTimeMillis()
         val date = LocalDate.now().toString()
         sendState(true, if (matched) "Mantra matched" else "Listening offline", transcript, matched)
@@ -410,84 +371,6 @@ class ChantRecognitionService : Service() {
         val notification = TrackingNotifications.show(this, TrackingNotifications.CHANT_ID,
             "$title · $total", liveText.take(120), stopAction())
         getSystemService(NotificationManager::class.java).notify(TrackingNotifications.CHANT_ID, notification)
-    }
-
-    private fun countPhrase(transcript: String, phrase: String): Int {
-        if (transcript.isBlank() || phrase.isBlank()) return 0
-        val normalize = { value: String ->
-            value.lowercase(Locale.ROOT)
-                .replace("ॐ", "ओम")
-                .replace("aum", "om")
-                .replace("shivaaya", "shivaya")
-                .replace("namaha", "namah")
-                .replace("दिगम्बरा", "दिगंबरा")
-                .replace("श्रीपादवल्लभ", "श्रीपाद वल्लभ")
-                .replace("tryambakam", "tryambakam")
-                .replace(Regex("[^\\p{L}\\p{N}\\s]"), " ")
-                .replace(Regex("\\s+"), " ").trim()
-        }
-        val text = normalize(transcript)
-        val target = normalize(phrase)
-        if (target.isBlank()) return 0
-
-        // Vosk often drops "दिगंबरा" and returns only repeated "श्रीपाद वल्लभ".
-        if (target.contains("दिगंबरा")) {
-            val vallabhaCount = Regex("श्रीपाद\\s+वल्लभ").findAll(text).count()
-            val digambaraCount = text.split(" ").count { it == "दिगंबरा" || it == "दिगम्बरा" }
-            val recoveredCount = maxOf(vallabhaCount, (digambaraCount + 2) / 3)
-            if (recoveredCount > 0) return recoveredCount
-        }
-
-        val exact = Regex("(?<![\\p{L}\\p{N}])" + Regex.escape(target) + "(?![\\p{L}\\p{N}])")
-            .findAll(text).count()
-        if (exact > 0) return exact
-
-        // Vosk may return a close Sanskrit/Hindi spelling for a syllable.
-        // Keep short mantras exact; for longer selections allow small token-level
-        // spelling differences, but require a high ordered match from the first word.
-        val expected = target.split(" ").filter { it.isNotBlank() }
-        val spoken = text.split(" ").filter { it.isNotBlank() }
-        if (expected.size < 3 || spoken.isEmpty()) return 0
-        if (tokenSimilarity(expected.first(), spoken.first()) < 0.70) return 0
-
-        var cursor = 0
-        var matchedTokens = 0
-        for (word in spoken) {
-            var bestIndex = -1
-            var bestScore = 0.0
-            for (index in cursor until expected.size) {
-                val score = tokenSimilarity(expected[index], word)
-                if (score > bestScore) { bestScore = score; bestIndex = index }
-            }
-            if (bestIndex >= 0 && bestScore >= 0.70) {
-                matchedTokens++
-                cursor = bestIndex + 1
-                if (cursor >= expected.size) break
-            }
-        }
-        return if (matchedTokens.toDouble() / expected.size >= 0.78) 1 else 0
-    }
-
-    private fun tokenSimilarity(first: String, second: String): Double {
-        if (first == second) return 1.0
-        if (first.isBlank() || second.isBlank()) return 0.0
-        val previous = IntArray(second.length + 1) { it }
-        var current = IntArray(second.length + 1)
-        for (i in first.indices) {
-            current[0] = i + 1
-            for (j in second.indices) {
-                val cost = if (first[i] == second[j]) 0 else 1
-                current[j + 1] = minOf(
-                    current[j] + 1,
-                    previous[j + 1] + 1,
-                    previous[j] + cost
-                )
-            }
-            for (j in previous.indices) previous[j] = current[j]
-        }
-        val distance = previous[second.length]
-        return 1.0 - distance.toDouble() / maxOf(first.length, second.length)
-
     }
 
     private fun downloadAndExtractModel(modelUrl: String, modelName: String, target: File) {

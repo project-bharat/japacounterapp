@@ -359,7 +359,7 @@ fun CounterApp(repo: CounterRepository) {
     val days by weekFlow.collectAsStateWithLifecycle(emptyList())
     val historyLogs by historyLogsFlow.collectAsStateWithLifecycle(emptyList())
     val allMantraLogs by allMantraLogsFlow.collectAsStateWithLifecycle(emptyList())
-    val dark = isSystemInDarkTheme() || (!child && !mantraLibrary)
+    val dark = isSystemInDarkTheme() || !child
     val page = if (dark) Color(0xFF211E39) else Color(0xFFFEF5D8)
     val ink = if (dark) Color(0xFFFEF5E6) else Color(0xFF302B54)
     val scheme = if (dark) darkColorScheme(primary = Color(0xFFB7D1D9), onPrimary = Color(0xFF242044), secondary = Color(0xFFB7D1D9), background = page, onBackground = ink, surface = Color(0xFF302C4B), onSurface = ink, surfaceVariant = Color(0xFF47415F), onSurfaceVariant = Color(0xFFEEE5DE), secondaryContainer = Color(0xFF514C6B), onSecondaryContainer = Color(0xFFFFF6E5))
@@ -368,7 +368,7 @@ fun CounterApp(repo: CounterRepository) {
     MaterialTheme(colorScheme = scheme) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
-        val rootBackground = !child && !mantraLibrary
+        val rootBackground = !child
         Image(painterResource(if (rootBackground) R.drawable.practice_sunrise else if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise),
             null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
@@ -379,12 +379,12 @@ fun CounterApp(repo: CounterRepository) {
             containerColor = Color.Transparent,
             bottomBar = {
                 if (!mantraLibrary && !child) {
-                    val shape = RoundedCornerShape(28.dp)
+                    val shape = RoundedCornerShape(36.dp)
                     val footerColor = if (dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
                     val footerInk = if (dark) Color(0xFFFFF6E5) else ink
                     val accent = if (dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
-                    Box(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().clip(shape)
+                    Box(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Row(Modifier.fillMaxWidth(.92f).widthIn(max = 360.dp).shadow(12.dp, shape).clip(shape)
                             .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             listOf(1, 0, 2).forEach { index ->

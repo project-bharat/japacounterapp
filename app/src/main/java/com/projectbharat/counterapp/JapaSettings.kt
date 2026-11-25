@@ -82,10 +82,10 @@ private fun SettingsDropdown(title: String, options: List<String>, index: Int, o
 @Composable
 internal fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = brandGlassColor()),
+        colors = CardDefaults.cardColors(containerColor = brandGlassColor(), contentColor = MaterialTheme.colorScheme.onSurface),
         border = androidx.compose.foundation.BorderStroke(1.dp, brandGlassBorder())) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(bottom = 6.dp))
             content()
         }
     }
@@ -95,8 +95,8 @@ internal fun SettingsGroup(title: String, content: @Composable ColumnScope.() ->
 internal fun SettingsLink(title: String, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onClick).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Text(title, Modifier.weight(1f))
-        Text("›")
+        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
+        Text("›", color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -104,7 +104,7 @@ internal fun SettingsLink(title: String, onClick: () -> Unit) {
 internal fun PreferenceSwitch(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, Modifier.weight(1f))
+        Text(title, Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
         Switch(checked, onChange)
     }
 }
@@ -125,7 +125,7 @@ internal fun JapaHelpScreen(uiLanguage: UiLanguage) {
             Text(if (uiLanguage.isEnglish) "Voice is processed on the device. Export a backup before changing phones. Restoring a file replaces local records."
                 else uiLanguage.indic("आवाजाची प्रक्रिया उपकरणावर होते. फोन बदलण्यापूर्वी बॅकअप घ्या. फाइल पुनर्संचयित केल्यावर स्थानिक नोंदी बदलतात.", "आवाज़ की प्रक्रिया डिवाइस पर होती है। फ़ोन बदलने से पहले बैकअप लें। फ़ाइल बहाल करने से स्थानीय रिकॉर्ड बदल जाते हैं।"))
         }
-        Text("Bhajame - Daily Japa & Bhakti · $version")
+        Text(uiLanguage.text("Bhajame - Daily Japa & Bhakti", "भजमे - दैनिक जप आणि भक्ती", "भजमे - दैनिक जप और भक्ति") + " · $version", color = MaterialTheme.colorScheme.onBackground)
     }
 }
 

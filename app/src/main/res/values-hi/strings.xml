@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">भजमे - दैनिक जप और भक्ति</string>
     <string name="count">गिनती</string>
     <string name="undo">वापस लें</string>
     <string name="reset">रीसेट</string>

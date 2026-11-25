@@ -419,7 +419,7 @@ fun AutoChantCounterScreen(
                 CircularProgressIndicator(
                     progress = { malaFraction },
                     modifier = Modifier.size(circleSize),
-                    strokeWidth = 9.dp,
+                    strokeWidth = 14.dp,
                     color = beadTint,
                     trackColor = Color(0xFFE8E1D7)
                 )
@@ -437,18 +437,19 @@ fun AutoChantCounterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                 Canvas(Modifier.fillMaxSize()) {
-                    val petalColor = Color(0xFF423C6D).copy(alpha = .13f)
                     val petalWidth = size.width * .25f
                     val petalHeight = size.height * .43f
+                    val petalFill = Brush.linearGradient(listOf(
+                        Color(0xFFDDBACD).copy(alpha = .23f),
+                        Color(0xFFADC9D0).copy(alpha = .13f),
+                        Color(0xFFEADCC1).copy(alpha = .04f)))
                     repeat(12) { petal ->
                         rotate(petal * 30f) {
-                            drawOval(color = petalColor,
+                            drawOval(brush = petalFill,
                                 topLeft = Offset((size.width - petalWidth) / 2f, size.height * .035f),
-                                size = Size(petalWidth, petalHeight), style = Stroke(width = 1.3.dp.toPx()))
+                                size = Size(petalWidth, petalHeight))
                         }
                     }
-                    drawCircle(petalColor, radius = size.minDimension * .43f, style = Stroke(width = 1.dp.toPx()))
-                    drawCircle(petalColor, radius = size.minDimension * .38f, style = Stroke(width = .8.dp.toPx()))
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.SelfImprovement, null, tint = Color(0xFF7855A6), modifier = Modifier.size(42.dp))
@@ -485,22 +486,24 @@ fun AutoChantCounterScreen(
                 Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Mic, null, tint = Color(0xFFFEF5E6),
+                        Icon(Icons.Default.Mic, null, tint = Color(0xFFC4FFCF),
                             modifier = Modifier.size(18.dp).graphicsLayer {
                                 scaleX = if (running) microphoneScale else 1f
                                 scaleY = if (running) microphoneScale else 1f
                             })
                         Text(if (running) uiLanguage.text("Listening", "ऐकत आहे", "सुन रहा है")
                             else uiLanguage.text("Preparing voice model…", "आवाज मॉडेल तयार होत आहे…", "आवाज़ मॉडल तैयार हो रहा है…"),
-                            color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelMedium)
+                            color = Color(0xFFC4FFCF), style = MaterialTheme.typography.labelMedium.copy(
+                                shadow = androidx.compose.ui.graphics.Shadow(Color(0xFF211E39), Offset(1f, 2f), 5f)))
                     }
                     if (recognizedText.isNotBlank()) {
                         val spokenMantra = displayMantra(context, categoryId, target, latin = false)
                         val displayed = if (latinMantras && spokenMantra.isNotBlank())
                             recognizedText.replace(spokenMantra, displayMantra(context, categoryId, target, latin = true))
                             else recognizedText
-                        Text(displayed, modifier = Modifier.fillMaxWidth(), color = Color(0xFFFEF5E6),
-                            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                        Text(displayed, modifier = Modifier.fillMaxWidth(), color = Color(0xFFD3EDFF),
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                shadow = androidx.compose.ui.graphics.Shadow(Color(0xFF211E39), Offset(1f, 2f), 5f)), textAlign = TextAlign.Center,
                             maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
