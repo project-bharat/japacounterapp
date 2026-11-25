@@ -67,6 +67,11 @@ object CounterBackupManager {
                         .put("effectiveDate", goal.effectiveDate).put("target", goal.target))
                 }
             })
+            root.put("japaPeriodGoals", JSONArray().apply {
+                dao.allPeriodGoals().forEach { goal ->
+                    put(JSONObject().put("categoryId", goal.categoryId).put("period", goal.period).put("target", goal.target))
+                }
+            })
             root
         }
         context.contentResolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { it.write(root.toString(2)) }
@@ -137,8 +142,15 @@ object CounterBackupManager {
         }
         require(japaGoals.all { it.categoryId in mantraIds && it.target in 1..999_999 })
         require(japaGoals.distinctBy { it.categoryId to it.effectiveDate }.size == japaGoals.size)
+        val periodArray = root.optJSONArray("japaPeriodGoals") ?: JSONArray()
+        val periodGoals = (0 until periodArray.length()).map { index ->
+            val row = periodArray.getJSONObject(index)
+            JapaPeriodGoal(row.getLong("categoryId"), row.getString("period"), row.getInt("target"))
+        }
+        require(periodGoals.all { it.categoryId in mantraIds && it.period in setOf("MONTHLY", "YEARLY") && it.target in 1..999_999_999 })
+        require(periodGoals.distinctBy { it.categoryId to it.period }.size == periodGoals.size)
         CounterDatabase.get(context).dao().restoreSnapshot(categories, logs, sessions, detections, walkingSessions,
-            japaSessions, japaGoals)
+            japaSessions, japaGoals, periodGoals)
     }
 
     suspend fun exportCsv(context: Context, uri: Uri) {

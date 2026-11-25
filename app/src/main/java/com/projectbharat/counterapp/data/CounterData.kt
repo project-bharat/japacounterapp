@@ -79,6 +79,9 @@ data class JapaSession(
 @Entity(tableName = "japa_goals", primaryKeys = ["categoryId", "effectiveDate"])
 data class JapaGoal(val categoryId: Long, val effectiveDate: String, val target: Int)
 
+@Entity(tableName = "japa_period_goals", primaryKeys = ["categoryId", "period"])
+data class JapaPeriodGoal(val categoryId: Long, val period: String, val target: Int)
+
 const val DEFAULT_JAPA_GOAL = 108
 
 fun japaGoalOn(goals: List<JapaGoal>, date: java.time.LocalDate): Int =
@@ -327,6 +330,25 @@ interface CounterDao {
         return true
     }
 
+    @Query("SELECT * FROM japa_period_goals WHERE categoryId=:categoryId")
+    fun periodGoals(categoryId: Long): Flow<List<JapaPeriodGoal>>
+    @Query("SELECT * FROM japa_period_goals")
+    suspend fun allPeriodGoals(): List<JapaPeriodGoal>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun savePeriodGoal(goal: JapaPeriodGoal)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPeriodGoals(goals: List<JapaPeriodGoal>)
+    @Query("DELETE FROM japa_period_goals")
+    suspend fun deleteAllPeriodGoals()
+    @Query("DELETE FROM japa_period_goals WHERE categoryId=:categoryId AND period=:period")
+    suspend fun deletePeriodGoal(categoryId: Long, period: String)
+    @Transaction
+    suspend fun saveGoalSettings(categoryId: Long, date: String, daily: Int, monthly: Int?, yearly: Int?) {
+        saveJapaGoal(JapaGoal(categoryId, date, daily))
+        if (monthly == null) deletePeriodGoal(categoryId, "MONTHLY") else savePeriodGoal(JapaPeriodGoal(categoryId, "MONTHLY", monthly))
+        if (yearly == null) deletePeriodGoal(categoryId, "YEARLY") else savePeriodGoal(JapaPeriodGoal(categoryId, "YEARLY", yearly))
+    }
+
     @Query("DELETE FROM counter_logs WHERE categoryId=:categoryId AND date=:date")
     suspend fun resetDay(categoryId: Long, date: String)
 
@@ -349,9 +371,10 @@ interface CounterDao {
     suspend fun deleteAllBabySessions()
 
     @Transaction
-    suspend fun restoreSnapshot(categories: List<CounterCategory>, logs: List<CounterLog>, sessions: List<BabySession>, detections: List<BabyDetection>, walkingSessions: List<WalkingSession>, japaSessions: List<JapaSession>, japaGoals: List<JapaGoal>) {
+    suspend fun restoreSnapshot(categories: List<CounterCategory>, logs: List<CounterLog>, sessions: List<BabySession>, detections: List<BabyDetection>, walkingSessions: List<WalkingSession>, japaSessions: List<JapaSession>, japaGoals: List<JapaGoal>, periodGoals: List<JapaPeriodGoal>) {
         deleteAllJapaSessions()
         deleteAllJapaGoals()
+        deleteAllPeriodGoals()
         deleteAllLogs()
         deleteAllBabySessions()
         deleteAllBabyDetections()
@@ -361,6 +384,7 @@ interface CounterDao {
         ensureJapaCategory()
         if (japaSessions.isNotEmpty()) insertJapaSessions(japaSessions)
         if (japaGoals.isNotEmpty()) insertJapaGoals(japaGoals)
+        if (periodGoals.isNotEmpty()) insertPeriodGoals(periodGoals)
         if (sessions.isNotEmpty()) insertBabySessions(sessions)
         if (detections.isNotEmpty()) insertBabyDetections(detections)
         if (walkingSessions.isNotEmpty()) insertWalkingSessions(walkingSessions)
@@ -422,7 +446,7 @@ interface CounterDao {
 
 data class DayTotal(val date: String, val total: Int)
 
-@Database(entities = [CounterCategory::class, CounterLog::class, BabySession::class, BabyDetection::class, WalkingSession::class, JapaSession::class, JapaGoal::class], version = 9, exportSchema = false)
+@Database(entities = [CounterCategory::class, CounterLog::class, BabySession::class, BabyDetection::class, WalkingSession::class, JapaSession::class, JapaGoal::class, JapaPeriodGoal::class], version = 10, exportSchema = false)
 abstract class CounterDatabase : RoomDatabase() {
     abstract fun dao(): CounterDao
     companion object {
@@ -484,9 +508,14 @@ abstract class CounterDatabase : RoomDatabase() {
                 db.execSQL("CREATE TABLE IF NOT EXISTS japa_goals (categoryId INTEGER NOT NULL, effectiveDate TEXT NOT NULL, target INTEGER NOT NULL, PRIMARY KEY(categoryId, effectiveDate))")
             }
         }
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS japa_period_goals (categoryId INTEGER NOT NULL, period TEXT NOT NULL, target INTEGER NOT NULL, PRIMARY KEY(categoryId, period))")
+            }
+        }
         fun get(context: Context): CounterDatabase = INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(context.applicationContext, CounterDatabase::class.java, "counterapp.db")
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build().also { INSTANCE = it }
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build().also { INSTANCE = it }
         }
     }
 }

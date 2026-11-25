@@ -360,10 +360,11 @@ fun AutoChantCounterScreen(
                     "Bhajame", Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.weight(1f))
                 val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.background(Color(0x663D3963), RoundedCornerShape(50)).border(1.dp, Color(0x6694B5C2), RoundedCornerShape(50)).padding(start = 10.dp, end = 4.dp), horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(magicCountLabel, style = MaterialTheme.typography.labelLarge, color = Color(0xFFFEF5E6))
                     Switch(
                         checked = automatic,
+                        thumbContent = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(15.dp), tint = Color(0xFF423C6D)) },
                         modifier = Modifier.semantics { contentDescription = magicCountLabel },
                         onCheckedChange = { enabled ->
                             if (!enabled) stopRecognition()
@@ -389,20 +390,20 @@ fun AutoChantCounterScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
                     Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(totalCount.toString(), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "LIFETIME" else uiLanguage.indic("आजवरचे जप", "अब तक के जप"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text(totalCount.toString(), color = Color(0xFFCDE5E9), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "LIFETIME" else uiLanguage.indic("आजवरचे जप", "अब तक के जप"), color = Color(0xFFCDE5E9), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
                 Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
                     Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$malaProgress/108", color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "MALA PROGRESS" else uiLanguage.indic("माळ प्रगती", "माला की प्रगति"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text("$malaProgress/108", color = Color(0xFFCDE5E9), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "MALA PROGRESS" else uiLanguage.indic("माळ प्रगती", "माला की प्रगति"), color = Color(0xFFCDE5E9), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
                 Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
                     Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text((totalCount / 108).toString(), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "MALAS" else uiLanguage.indic("पूर्ण माळा", "पूरी मालाएँ"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                        Text((totalCount / 108).toString(), color = Color(0xFFCDE5E9), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "MALAS" else uiLanguage.indic("पूर्ण माळा", "पूरी मालाएँ"), color = Color(0xFFCDE5E9), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
@@ -414,15 +415,20 @@ fun AutoChantCounterScreen(
             val circleSize = minOf(280, (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp - 72).coerceAtLeast(180)).dp
             Box(Modifier.padding(top = 6.dp).size(circleSize), contentAlignment = Alignment.Center) {
                 val pulse = if (animationEvent > 0) (1f - flyingProgress.value) else 0f
+                if (animationEvent > 0 && flyingProgress.value < 1f) Canvas(Modifier.fillMaxSize().graphicsLayer {
+                    scaleX = 1f + flyingProgress.value * .30f; scaleY = scaleX
+                }) { drawCircle(Color(0xFFB7D1D9).copy(alpha = (1f - flyingProgress.value) * .55f), style = Stroke(width = 2.dp.toPx())) }
                 Box(Modifier.fillMaxSize().graphicsLayer(scaleX = 1f + pulse * .18f, scaleY = 1f + pulse * .18f)
                     .background(Brush.radialGradient(listOf(Color(0xFFB9D9E2).copy(alpha = .5f * pulse), Color.Transparent)), CircleShape))
-                CircularProgressIndicator(
-                    progress = { malaFraction },
-                    modifier = Modifier.size(circleSize),
-                    strokeWidth = 14.dp,
-                    color = beadTint,
-                    trackColor = Color(0xFFE8E1D7)
-                )
+                Canvas(Modifier.size(circleSize)) {
+                    val width = 14.dp.toPx()
+                    val inset = width / 2
+                    val area = Size(size.width - width, size.height - width)
+                    drawArc(Color(0xFFE8E1D7), -90f, 360f, false, topLeft = Offset(inset, inset), size = area,
+                        style = Stroke(width = width))
+                    if (malaFraction > 0f) drawArc(beadTint, -90f, 360f * malaFraction, false,
+                        topLeft = Offset(inset, inset), size = area, style = Stroke(width = width))
+                }
                 Box(
                     Modifier.size(circleSize - 25.dp)
                         .graphicsLayer(scaleX = manualScale, scaleY = manualScale)
@@ -436,7 +442,10 @@ fun AutoChantCounterScreen(
                         }),
                     contentAlignment = Alignment.Center
                 ) {
-                Canvas(Modifier.fillMaxSize()) {
+                val mandalaTransition = rememberInfiniteTransition(label = "mandalaRotation")
+                val mandalaAngle by mandalaTransition.animateFloat(0f, 360f,
+                    androidx.compose.animation.core.infiniteRepeatable(tween(90000, easing = androidx.compose.animation.core.LinearEasing)), label = "mandalaAngle")
+                Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = mandalaAngle }) {
                     val petalWidth = size.width * .25f
                     val petalHeight = size.height * .43f
                     val petalFill = Brush.linearGradient(listOf(
@@ -463,12 +472,13 @@ fun AutoChantCounterScreen(
                     Text(displayMantra(context, categoryId, target, latinMantras),
                         modifier = Modifier.graphicsLayer {
                             translationY = (if (animationFromVoice) travel else -travel) * (1f - progress)
-                            scaleX = 1f - progress * .35f
-                            scaleY = 1f - progress * .35f
+                            translationX = travel * .30f * kotlin.math.sin(progress * Math.PI).toFloat() * (if (animationEvent % 2 == 0) 1 else -1)
+                            scaleX = 1f + .25f * kotlin.math.sin(progress * Math.PI).toFloat() - progress * .35f
+                            scaleY = scaleX
                             alpha = (if (progress < .15f) progress / .15f else (1f - progress) / .85f).coerceIn(0f, 1f)
                         }.clearAndSetSemantics { },
                         maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                        color = androidx.compose.ui.graphics.lerp(Color(0xFFFEF5E6), Color(0xFF302B54), progress),
+                        color = androidx.compose.ui.graphics.lerp(if (animationEvent % 2 == 0) Color(0xFFD5E9F0) else Color(0xFFF3D9E4), Color(0xFF302B54), progress),
                         style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 }
             }
@@ -669,6 +679,7 @@ fun AutoChantCounterScreen(
 fun JapaReportScreen(
     logs: List<CounterLog>,
     goals: List<JapaGoal>,
+    periodGoals: List<com.projectbharat.counterapp.data.JapaPeriodGoal>,
     today: LocalDate,
     uiLanguage: UiLanguage,
     ink: Color,
@@ -746,6 +757,17 @@ fun JapaReportScreen(
                 Row {
                     TextButton(onClick = onEditGoal) { Text(uiLanguage.text("Edit goal", "लक्ष्य बदला", "लक्ष्य बदलें")) }
                     TextButton(onClick = { shareKind = 1 }) { Text(uiLanguage.text("Share", "शेअर करा", "साझा करें")) }
+                }
+            }
+        }
+        periodGoals.forEach { goal ->
+            val prefix = if (goal.period == "MONTHLY") today.toString().take(7) else today.year.toString()
+            val periodTotal = totalsByDate.filterKeys { it.startsWith(prefix) }.values.sum()
+            ProgressGradientCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(if (goal.period == "MONTHLY") uiLanguage.text("Monthly goal", "मासिक लक्ष्य", "मासिक लक्ष्य") else uiLanguage.text("Yearly goal", "वार्षिक लक्ष्य", "वार्षिक लक्ष्य"), color = ink)
+                    Text("$periodTotal / ${goal.target}", color = ink, style = MaterialTheme.typography.headlineSmall)
+                    LinearProgressIndicator(progress = { (periodTotal.toFloat() / goal.target).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

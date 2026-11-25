@@ -167,6 +167,8 @@ class CounterViewModel(private val repo: CounterRepository) : ViewModel() {
     fun mantraToday(id: Long, mantra: String) = repo.mantraToday(id, mantra)
     fun activeJapaSession(id: Long, mantra: String) = repo.activeJapaSession(id, mantra)
     fun japaGoals(id: Long) = repo.japaGoals(id)
+    fun periodGoals(id: Long) = repo.periodGoals(id)
+    suspend fun saveGoalSettings(id: Long, daily: Int, monthly: Int?, yearly: Int?) = repo.saveGoalSettings(id, daily, monthly, yearly)
     fun japaDayTotal(id: Long, date: LocalDate) = repo.japaDayTotal(id, date)
     suspend fun saveJapaGoal(id: Long, target: Int) = repo.saveJapaGoal(id, target)
     suspend fun finishJapaSession(session: JapaSession) =
@@ -209,7 +211,6 @@ fun CounterApp(repo: CounterRepository) {
     val reportState = rememberSaveableStateHolder()
     var remindersScreen by remember { mutableStateOf(false) }
     var backupScreen by remember { mutableStateOf(false) }
-    var voiceModelsDialog by remember { mutableStateOf(false) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
     var backupBusy by remember { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
@@ -217,6 +218,9 @@ fun CounterApp(repo: CounterRepository) {
     var help by rememberSaveable { mutableStateOf(false) }
     var achievements by rememberSaveable { mutableStateOf(false) }
     var themePicker by rememberSaveable { mutableStateOf(false) }
+    var goalsScreen by rememberSaveable { mutableStateOf(false) }
+    var proScreen by rememberSaveable { mutableStateOf(false) }
+    var proFromBackup by rememberSaveable { mutableStateOf(false) }
     fun navigate(destination: Int) {
         tab = destination
         monthlyHistory = false
@@ -225,6 +229,9 @@ fun CounterApp(repo: CounterRepository) {
         help = false
         achievements = false
         themePicker = false
+        goalsScreen = false
+        proScreen = false
+        proFromBackup = false
     }
     var resetDialog by remember { mutableStateOf(false) }
     var historyDate by remember { mutableStateOf(LocalDate.now()) }
@@ -235,14 +242,14 @@ fun CounterApp(repo: CounterRepository) {
             delay(15_000)
         }
     }
-    var editGoalDialog by remember { mutableStateOf(false) }
     var finishedSession by remember { mutableStateOf<JapaSession?>(null) }
     var finishingSession by remember { mutableStateOf(false) }
     var mantraLibrary by rememberSaveable { mutableStateOf(false) }
-    val child = monthlyHistory || remindersScreen || backupScreen || help || achievements || themePicker
+    val child = monthlyHistory || remindersScreen || backupScreen || help || achievements || themePicker || goalsScreen || proScreen
     fun goBack() {
         when {
             mantraLibrary -> mantraLibrary = false
+            proScreen && proFromBackup -> { proScreen = false; proFromBackup = false; backupScreen = true }
             child -> navigate(tab)
             else -> navigate(0)
         }
@@ -335,6 +342,8 @@ fun CounterApp(repo: CounterRepository) {
     }
     val goalHistory by goalsFlow.collectAsStateWithLifecycle(emptyList())
     val dailyGoal = japaGoalOn(goalHistory, today)
+    val periodGoalsFlow = remember(japaCategoryId) { japaCategoryId?.let(vm::periodGoals) ?: flowOf(emptyList()) }
+    val periodGoals by periodGoalsFlow.collectAsStateWithLifecycle(emptyList())
     val dayTotalFlow = remember(japaCategoryId, today) {
         japaCategoryId?.let { vm.japaDayTotal(it, today) } ?: flowOf(0)
     }
@@ -362,14 +371,13 @@ fun CounterApp(repo: CounterRepository) {
     val days by weekFlow.collectAsStateWithLifecycle(emptyList())
     val historyLogs by historyLogsFlow.collectAsStateWithLifecycle(emptyList())
     val allMantraLogs by allMantraLogsFlow.collectAsStateWithLifecycle(emptyList())
-    val dark = isSystemInDarkTheme() || !child
+    val dark = true
     val page = if (dark) Color(0xFF211E39) else Color(0xFFFEF5D8)
     val ink = if (dark) Color(0xFFFEF5E6) else Color(0xFF302B54)
     val scheme = if (dark) darkColorScheme(primary = Color(0xFFB7D1D9), onPrimary = Color(0xFF242044), secondary = Color(0xFFB7D1D9), background = page, onBackground = ink, surface = Color(0xFF302C4B), onSurface = ink, surfaceVariant = Color(0xFF47415F), onSurfaceVariant = Color(0xFFEEE5DE), secondaryContainer = Color(0xFF514C6B), onSecondaryContainer = Color(0xFFFFF6E5))
                  else lightColorScheme(primary = Color(0xFF423C6D), onPrimary = Color.White, secondary = Color(0xFF647E8A), background = page, onBackground = ink, surface = Color(0xFFFFFBF1), onSurface = ink, surfaceVariant = Color(0xFFEADCC1), onSurfaceVariant = Color(0xFF423C6D), secondaryContainer = Color(0xFFE7DFD4), onSecondaryContainer = Color(0xFF302B54))
 
     MaterialTheme(colorScheme = scheme) {
-        if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
         val rootBackground = !child
         Image(painterResource(selectedTheme.image),
@@ -383,11 +391,11 @@ fun CounterApp(repo: CounterRepository) {
             bottomBar = {
                 if (!mantraLibrary && !child) {
                     val shape = RoundedCornerShape(36.dp)
-                    val footerColor = if (dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
+                    val footerColor = if (dark) Color(0x992D294B) else Color(0xCFFEF9ED)
                     val footerInk = if (dark) Color(0xFFFFF6E5) else ink
                     val accent = if (dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
                     Box(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Row(Modifier.fillMaxWidth(.92f).widthIn(max = 360.dp).shadow(12.dp, shape).clip(shape)
+                        Row(Modifier.fillMaxWidth(.86f).widthIn(max = 340.dp).shadow(12.dp, shape).clip(shape)
                             .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             listOf(1, 0, 2).forEach { index ->
@@ -408,6 +416,8 @@ fun CounterApp(repo: CounterRepository) {
                                     Icon(painterResource(icon), null, Modifier.size(26.dp), tint = if (tab == index) accent else footerInk)
                                     Text(label, color = if (tab == index) accent else footerInk,
                                         style = MaterialTheme.typography.labelSmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.None))
+                                    Spacer(Modifier.height(5.dp))
+                                    Box(Modifier.width(36.dp).height(3.dp).background(if (tab == index) Color(0xFFFEF5D8) else Color.Transparent, CircleShape))
                                 }
                             }
                         }
@@ -428,7 +438,13 @@ fun CounterApp(repo: CounterRepository) {
                         Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 }
                 Box(Modifier.weight(1f)) {
-                if (themePicker) {
+                if (goalsScreen && japaCategoryId != null) {
+                    JapaGoalsScreen(uiLanguage, dailyGoal, periodGoals) { daily, monthly, yearly ->
+                        scope.launch { vm.saveGoalSettings(japaCategoryId, daily, monthly, yearly); goalsScreen = false }
+                    }
+                } else if (proScreen) {
+                    JapaProScreen(uiLanguage)
+                } else if (themePicker) {
                     BhajameThemePicker(selectedTheme, uiLanguage) { theme ->
                         selectedTheme = theme
                         appPreferences.edit().putString("background_theme", theme.id).apply()
@@ -439,7 +455,7 @@ fun CounterApp(repo: CounterRepository) {
                 } else if (help) {
                     JapaHelpScreen(uiLanguage)
                 } else if (backupScreen) {
-                    BackupSettingsScreen(uiLanguage = uiLanguage, ink = ink, message = backupMessage, busy = backupBusy,
+                    BackupSettingsScreen(uiLanguage = uiLanguage, ink = ink, message = backupMessage, busy = backupBusy, onUpgrade = { proFromBackup = true; proScreen = true; backupScreen = false },
                         onExportBackup = { jsonExportLauncher.launch("AppBackup_" + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")) + ".json") },
                         onImportBackup = { jsonImportLauncher.launch(arrayOf("application/json", "text/*")) },
                         onExportCsv = { csvExportLauncher.launch("daily-counter-history.csv") })
@@ -458,11 +474,11 @@ fun CounterApp(repo: CounterRepository) {
                 } else if (tab == 1 && selected?.kind == "MANTRA") {
                     reportState.SaveableStateProvider("japa-report") {
                         JapaReportScreen(
-                            logs = allMantraLogs, goals = goalHistory, today = today, uiLanguage = uiLanguage, ink = ink,
+                            logs = allMantraLogs, goals = goalHistory, periodGoals = periodGoals, today = today, uiLanguage = uiLanguage, ink = ink,
                             mantraLabel = { displayMantra(context, selected.id, it, latinMantras) },
                             onDaySelected = { date -> historyDate = date; monthlyHistory = true },
                             onAchievements = { achievements = true },
-                            onEditGoal = { editGoalDialog = true }
+                            onEditGoal = { goalsScreen = true }
                         )
                     }
                 } else if (tab == 1) {
@@ -506,7 +522,7 @@ fun CounterApp(repo: CounterRepository) {
                         themeName = selectedTheme.title(uiLanguage),
                         onThemes = { themePicker = true },
                         onReminders = { remindersScreen = true },
-                        onModels = { voiceModelsDialog = true },
+                        onModels = { SpeechModelDownloadScheduler.enqueueAll(context, wifiOnly = false) },
                         onBackup = { backupScreen = true },
                         onHelp = { help = true }
                     )
@@ -519,7 +535,7 @@ fun CounterApp(repo: CounterRepository) {
                         mantraLibrary = mantraLibrary,
                         onLibraryChange = { mantraLibrary = it },
                         sessionCount = activeJapa?.count ?: 0,
-                        onEditGoal = { editGoalDialog = true },
+                        onEditGoal = { goalsScreen = true },
                         onFinish = activeJapa?.takeUnless { finishingSession }?.let { session ->
                             {
                                 finishingSession = true
@@ -559,33 +575,7 @@ fun CounterApp(repo: CounterRepository) {
         }
     }
     }
-    if (editGoalDialog && japaCategoryId != null) {
-        var input by remember(japaCategoryId) { mutableStateOf(dailyGoal.toString()) }
-        val target = input.toIntOrNull()?.takeIf { it in 1..999_999 }
-        AlertDialog(
-            onDismissRequest = { editGoalDialog = false },
-            icon = { Icon(Icons.Default.Edit, null) },
-            title = { Text(if (uiLanguage.isEnglish) "Daily Japa goal" else uiLanguage.indic("दररोजचे जप लक्ष्य", "दैनिक जप लक्ष्य")) },
-            text = {
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { if (it.length <= 6 && it.all(Char::isDigit)) input = it },
-                    label = { Text(if (uiLanguage.isEnglish) "Chants per day" else uiLanguage.indic("दररोजचे जप", "प्रतिदिन जप")) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                Button(onClick = {
-                    target?.let { scope.launch { vm.saveJapaGoal(japaCategoryId, it) } }
-                    editGoalDialog = false
-                }, enabled = target != null) { Text(if (uiLanguage.isEnglish) "Save" else uiLanguage.indic("जतन करा", "सहेजें")) }
-            },
-            dismissButton = {
-                TextButton(onClick = { editGoalDialog = false }) { Text(if (uiLanguage.isEnglish) "Cancel" else uiLanguage.indic("रद्द", "रद्द करें")) }
-            }
-        )
-    }
+    MaterialTheme(colorScheme = scheme) {
     finishedSession?.let { session ->
         val title = uiLanguage.text("Japa session saved", "जप सत्र जतन झाले", "जप सत्र सहेजा गया")
         val mantra = displayMantra(context, session.categoryId, session.mantra, latinMantras)
@@ -636,6 +626,7 @@ fun CounterApp(repo: CounterRepository) {
     if (resetDialog) AlertDialog(onDismissRequest = { resetDialog = false }, title = { Text(if (uiLanguage.isEnglish) "Reset today's count?" else uiLanguage.indic("आजची मोजणी रीसेट करायची?", "आज की गिनती रीसेट करें?")) },
         confirmButton = { TextButton(onClick = { scope.launch { selected?.let { vm.reset(it.id) } }; resetDialog = false }) { Text(if (uiLanguage.isEnglish) "Reset" else "रीसेट") } },
         dismissButton = { TextButton(onClick = { resetDialog = false }) { Text(if (uiLanguage.isEnglish) "Cancel" else uiLanguage.indic("रद्द", "रद्द करें")) } })
+    }
 }
 
 @Composable

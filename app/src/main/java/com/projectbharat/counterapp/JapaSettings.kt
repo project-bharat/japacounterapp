@@ -1,6 +1,12 @@
 package com.projectbharat.counterapp
 
-import android.content.pm.ApplicationInfo
+import android.content.Intent
+import android.net.Uri
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -46,12 +52,14 @@ internal fun JapaSettingsScreen(
         }
         SettingsGroup(if (uiLanguage.isEnglish) "Reminders and data" else uiLanguage.indic("स्मरणपत्रे व डेटा", "अनुस्मारक और डेटा")) {
             SettingsLink(if (uiLanguage.isEnglish) "Reminders" else uiLanguage.indic("स्मरणपत्रे", "अनुस्मारक"), onReminders)
-            SettingsLink(if (uiLanguage.isEnglish) "Offline voice models" else uiLanguage.indic("ऑफलाइन आवाज मॉडेल", "ऑफ़लाइन आवाज़ मॉडल"), onModels)
+            AiVoiceDetectorStatus(uiLanguage, onModels)
             SettingsLink(if (uiLanguage.isEnglish) "Backup & sync" else uiLanguage.indic("बॅकअप व सिंक", "बैकअप और सिंक"), onBackup)
         }
         SettingsGroup(if (uiLanguage.isEnglish) "Support" else uiLanguage.indic("मदत", "सहायता")) {
             SettingsLink(if (uiLanguage.isEnglish) "Help & About" else uiLanguage.indic("मदत व अॅपची माहिती", "सहायता और ऐप की जानकारी"), onHelp)
         }
+        DeveloperCard(uiLanguage)
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -129,80 +137,74 @@ internal fun JapaHelpScreen(uiLanguage: UiLanguage) {
                 else uiLanguage.indic("आवाजाची प्रक्रिया उपकरणावर होते. फोन बदलण्यापूर्वी बॅकअप घ्या. फाइल पुनर्संचयित केल्यावर स्थानिक नोंदी बदलतात.", "आवाज़ की प्रक्रिया डिवाइस पर होती है। फ़ोन बदलने से पहले बैकअप लें। फ़ाइल बहाल करने से स्थानीय रिकॉर्ड बदल जाते हैं।"))
         }
         Text(uiLanguage.text("Bhajame - Daily Japa & Bhakti", "भजमे - दैनिक जप आणि भक्ती", "भजमे - दैनिक जप और भक्ति") + " · $version", color = MaterialTheme.colorScheme.onBackground)
+        DeveloperCard(uiLanguage)
     }
 }
 
 @Composable
-internal fun DrivePreviewCard(uiLanguage: UiLanguage) {
+internal fun AiVoiceDetectorStatus(language: UiLanguage, onRetry: () -> Unit) {
     val context = LocalContext.current
-    val debuggable = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-    var preview by remember { mutableStateOf(false) }
-    var state by remember { mutableIntStateOf(0) }
-    var autoSync by remember { mutableStateOf(false) }
-    SettingsGroup(if (uiLanguage.isEnglish) "Google Drive Cloud Sync · Pro" else "Google Drive क्लाउड सिंक · Pro") {
-        Image(painterResource(R.drawable.ic_drive_brand), "Google Drive", Modifier.size(28.dp))
-        Text(if (uiLanguage.isEnglish) "Private backup and restore on your Google Drive." else uiLanguage.indic("तुमच्या Google Drive वर खाजगी बॅकअप व पुनर्संचयित.", "अपने Google Drive में निजी बैकअप लें और बहाल करें।"))
-        if (debuggable) {
-            FilledTonalButton(onClick = { preview = true }) {
-                Icon(Icons.Default.Lock, null)
-                Spacer(Modifier.width(6.dp))
-                Text(if (uiLanguage.isEnglish) "Upgrade to Pro" else uiLanguage.indic("Pro घ्या", "Pro लें"))
+    var installed by remember { mutableStateOf(false) }
+    var work by remember { mutableStateOf<WorkInfo?>(null) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val state = withContext(Dispatchers.IO) {
+                VoskOfflineModelInstaller.isInstalled(context, "hi") to
+                    runCatching { WorkManager.getInstance(context).getWorkInfosByTag("vosk_hi").get().lastOrNull() }.getOrNull()
             }
+            installed = state.first
+            work = state.second
+            delay(2000)
         }
     }
-    if (debuggable && preview) {
-        val labels = if (uiLanguage.isEnglish) listOf("Upgrade", "Link account", "Connected", "Syncing", "Error", "Conflict")
-            else listOf("अपग्रेड", uiLanguage.indic("खाते जोडा", "खाता जोड़ें"), uiLanguage.indic("जोडले आहे", "कनेक्ट है"), uiLanguage.indic("सिंक सुरू", "सिंक जारी है"), uiLanguage.indic("त्रुटी", "त्रुटि"), uiLanguage.indic("विरोध", "बैकअप टकराव"))
-        Dialog(onDismissRequest = { preview = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Surface(shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth().padding(18.dp)) {
-                Column(Modifier.heightIn(max = 620.dp).verticalScroll(rememberScrollState()).padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Image(painterResource(R.drawable.ic_drive_brand), null, Modifier.size(32.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Japa Plus", style = MaterialTheme.typography.headlineSmall)
-                            Text(if (uiLanguage.isEnglish) "Debug preview" else uiLanguage.indic("चाचणी पूर्वदृश्य", "परीक्षण पूर्वावलोकन"), style = MaterialTheme.typography.labelMedium)
-                        }
-                        FilledTonalIconButton(onClick = { preview = false }) {
-                            Icon(Icons.Default.Close, if (uiLanguage.isEnglish) "Close" else uiLanguage.indic("बंद करा", "बंद करें"))
-                        }
-                    }
-                    var menu by remember { mutableStateOf(false) }
-                    Box {
-                        OutlinedButton(onClick = { menu = true }) { Text(labels[state]) }
-                        DropdownMenu(menu, { menu = false }) {
-                            labels.forEachIndexed { index, label ->
-                                DropdownMenuItem(text = { Text(label) }, onClick = { state = index; menu = false })
-                            }
-                        }
-                    }
-                    when (state) {
-                        0 -> {
-                            Text(if (uiLanguage.isEnglish) "Automatic private backups, Sync Now, and cloud restore." else uiLanguage.indic("स्वयंचलित खाजगी बॅकअप, सिंक व क्लाउड पुनर्संचयित.", "स्वचालित निजी बैकअप, सिंक और क्लाउड से बहाली।"))
-                            Button(onClick = { state = 1 }) { Text(if (uiLanguage.isEnglish) "Preview account setup" else uiLanguage.indic("खाते सेटअप पहा", "खाता सेटअप देखें")) }
-                        }
-                        1 -> OutlinedButton(onClick = { state = 2 }) {
-                            Image(painterResource(R.drawable.ic_google_brand), null, Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(if (uiLanguage.isEnglish) "Connect Google Account" else uiLanguage.indic("Google खाते जोडा", "Google खाता जोड़ें"))
-                        }
-                        else -> {
-                            Text("preview@example.com")
-                            TextButton(onClick = { state = 1; autoSync = false }) { Text(if (uiLanguage.isEnglish) "Disconnect" else uiLanguage.indic("खाते वेगळे करा", "खाता डिस्कनेक्ट करें")) }
-                            PreferenceSwitch(if (uiLanguage.isEnglish) "Auto-Sync" else uiLanguage.indic("स्वयंचलित सिंक", "स्वचालित सिंक"), autoSync) { autoSync = it }
-                            Text(if (uiLanguage.isEnglish) "Last synced · 21 Nov 2026, 10:30" else uiLanguage.indic("शेवटचा सिंक · २१ नोव्हेंबर २०२६, १०:३०", "अंतिम सिंक · २१ नवंबर २०२६, १०:३०"))
-                            Button(onClick = { state = 3 }, enabled = state != 3) { Icon(Icons.Default.Sync, null); Spacer(Modifier.width(6.dp)); Text(if (uiLanguage.isEnglish) "Sync Now" else uiLanguage.indic("आता सिंक करा", "अभी सिंक करें")) }
-                            OutlinedButton(onClick = { state = 4 }, enabled = state != 3) { Icon(Icons.Default.CloudDownload, null); Spacer(Modifier.width(6.dp)); Text(if (uiLanguage.isEnglish) "Restore from Cloud" else uiLanguage.indic("क्लाउडवरून पुनर्संचयित", "क्लाउड से बहाल करें")) }
-                            if (state == 3) {
-                                LinearProgressIndicator(Modifier.fillMaxWidth())
-                                TextButton(onClick = { state = 2 }) { Text(if (uiLanguage.isEnglish) "Preview success" else uiLanguage.indic("यशस्वी स्थिती पहा", "सफल स्थिति देखें")) }
-                            }
-                            if (state == 4) Text(if (uiLanguage.isEnglish) "Cloud access needs authorization." else uiLanguage.indic("क्लाउड प्रवेशासाठी परवानगी आवश्यक आहे.", "क्लाउड एक्सेस के लिए अनुमति चाहिए।"))
-                            if (state == 5) Text(if (uiLanguage.isEnglish) "Local and Drive backups both changed. Review both before continuing." else uiLanguage.indic("स्थानिक व Drive बॅकअप बदलले आहेत. पुढे जाण्यापूर्वी दोन्ही तपासा.", "स्थानीय और Drive बैकअप दोनों बदले हैं। आगे बढ़ने से पहले दोनों जाँचें।"))
-                        }
-                    }
-                }
-            }
+    val info = work
+    val progress = info?.progress?.getInt("progress", 0) ?: 0
+    val downloading = info?.state == WorkInfo.State.RUNNING || info?.state == WorkInfo.State.ENQUEUED
+    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Text(language.text("AI Voice Detector", "एआय आवाज ओळख", "एआई आवाज़ पहचान"), color = MaterialTheme.colorScheme.onSurface)
+        val label = when {
+            installed -> language.text("Ready", "तयार", "तैयार")
+            downloading && progress > 0 -> language.text("Downloading · $progress%", "डाउनलोड होत आहे · $progress%", "डाउनलोड हो रहा है · $progress%")
+            downloading -> language.text("Preparing download…", "डाउनलोड तयार होत आहे…", "डाउनलोड तैयार हो रहा है…")
+            else -> language.text("Model not ready", "मॉडेल तयार नाही", "मॉडल तैयार नहीं है")
         }
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (downloading && progress > 0) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+        if (!installed && !downloading) TextButton(onClick = onRetry) { Text(language.text("Download", "डाउनलोड करा", "डाउनलोड करें")) }
+    }
+}
+
+@Composable
+internal fun DeveloperCard(language: UiLanguage) {
+    val context = LocalContext.current
+    fun open(uri: String) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri))) } }
+    SettingsGroup(language.text("Designed & developed by", "संकल्पना व विकास", "परिकल्पना और विकास")) {
+        Text("Bharat Rasve", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = { open("https://wa.me/917218838122") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("WhatsApp") }
+            TextButton(onClick = { open("https://www.linkedin.com/in/bharatrasve") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("LinkedIn") }
+            TextButton(onClick = { open("https://www.instagram.com/bharat_rasve_?r=nametag") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Instagram") }
+        }
+    }
+}
+
+@Composable
+internal fun DrivePreviewCard(uiLanguage: UiLanguage, onUpgrade: () -> Unit) {
+    SettingsGroup(uiLanguage.text("Google Drive Cloud Sync · Pro", "Google Drive क्लाउड सिंक · Pro", "Google Drive क्लाउड सिंक · Pro")) {
+        Image(painterResource(R.drawable.ic_drive_brand), "Google Drive", Modifier.size(28.dp))
+        Text(uiLanguage.text("Private backup and restore are planned for Pro.", "खाजगी बॅकअप व पुनर्संचयित Pro साठी नियोजित आहे.", "निजी बैकअप और बहाली Pro के लिए नियोजित हैं."), color = MaterialTheme.colorScheme.onSurface)
+        FilledTonalButton(onClick = onUpgrade) { Text(uiLanguage.text("Explore Pro", "Pro पहा", "Pro देखें")) }
+    }
+}
+
+@Composable
+internal fun JapaProScreen(language: UiLanguage) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text("Bhajame Pro", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
+        Text(language.text("Plan preview · purchases are not available yet", "योजनांचा पूर्वावलोकन · खरेदी अद्याप उपलब्ध नाही", "योजनाओं का पूर्वावलोकन · खरीदारी अभी उपलब्ध नहीं है"), color = MaterialTheme.colorScheme.onBackground)
+        listOf(language.text("Monthly", "मासिक", "मासिक"), language.text("Yearly", "वार्षिक", "वार्षिक"), language.text("Lifetime", "आजीवन", "आजीवन")).forEach { name ->
+            SettingsGroup(name) { Text(language.text("Pricing and availability to be announced", "किंमत व उपलब्धता नंतर जाहीर होईल", "कीमत और उपलब्धता बाद में बताई जाएगी"), color = MaterialTheme.colorScheme.onSurface) }
+        }
+        Text(language.text("Google Drive backup and Play Billing are not connected in this preview.", "या पूर्वावलोकनात Google Drive बॅकअप व Play Billing जोडलेले नाहीत.", "इस पूर्वावलोकन में Google Drive बैकअप और Play Billing जुड़े नहीं हैं।"), color = MaterialTheme.colorScheme.onBackground)
     }
 }

@@ -23,6 +23,15 @@ class CounterRepository(private val dao: CounterDao) {
     fun allMantraLogs(categoryId: Long): Flow<List<CounterLog>> = dao.allMantraLogs(categoryId)
     fun activeJapaSession(categoryId: Long, mantra: String) = dao.activeJapaSession(categoryId, mantra.trim())
     fun japaGoals(categoryId: Long) = dao.japaGoals(categoryId)
+    fun periodGoals(categoryId: Long) = dao.periodGoals(categoryId)
+    suspend fun saveGoalSettings(categoryId: Long, daily: Int, monthly: Int?, yearly: Int?) {
+        require(daily in 1..999_999 && listOfNotNull(monthly, yearly).all { it in 1..999_999_999 })
+        dao.saveGoalSettings(categoryId, LocalDate.now().toString(), daily, monthly, yearly)
+    }
+    suspend fun savePeriodGoal(categoryId: Long, period: String, target: Int) {
+        require(period in setOf("MONTHLY", "YEARLY") && target in 1..999_999_999)
+        dao.savePeriodGoal(JapaPeriodGoal(categoryId, period, target))
+    }
     fun japaDayTotal(categoryId: Long, date: LocalDate) = dao.japaDayTotal(categoryId, date.toString())
     suspend fun saveJapaGoal(categoryId: Long, target: Int) {
         require(target in 1..999_999)

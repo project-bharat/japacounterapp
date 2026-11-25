@@ -96,7 +96,7 @@ private fun renderJapaImage(context: Context, card: JapaImageCard): Bitmap {
     }
     fun text(value: String, top: Float, size: Float, bold: Boolean = false, maxLines: Int = 2) {
         val ink = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0xFF253C35.toInt()
+            color = 0xFF423C6D.toInt()
             textSize = size
             typeface = Typeface.create("sans-serif", if (bold) Typeface.BOLD else Typeface.NORMAL)
             textLocale = card.uiLanguage.locale
@@ -116,6 +116,7 @@ private fun renderJapaImage(context: Context, card: JapaImageCard): Bitmap {
     text(card.detail, 990f, 40f)
     val utc = DateTimeFormatter.ofPattern("dd MMM yyyy · HH:mm 'UTC'", card.uiLanguage.locale)
         .withZone(ZoneOffset.UTC).format(Instant.ofEpochMilli(card.timestamp))
-    text(utc, 1140f, 32f)
+    text(utc, 1110f, 32f)
+    text("Designed & developed by Bharat Rasve", 1165f, 25f)
     return bitmap
 }

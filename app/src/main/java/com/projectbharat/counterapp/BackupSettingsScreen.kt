@@ -20,6 +20,7 @@ fun BackupSettingsScreen(
     ink: Color,
     message: String?,
     busy: Boolean,
+    onUpgrade: () -> Unit,
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit,
     onExportCsv: () -> Unit
@@ -54,7 +55,7 @@ fun BackupSettingsScreen(
             }
         }
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        DrivePreviewCard(uiLanguage)
+        DrivePreviewCard(uiLanguage, onUpgrade)
         if (!message.isNullOrBlank()) {
             Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium) {
                 Text(message, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(12.dp))

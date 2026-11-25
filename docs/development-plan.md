@@ -141,3 +141,11 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Included the original sunrise and eight original bundled illustrations inspired by the requested dawn, ghat, bodhi, lotus, Kailash, tulsi, mandala waves and Narmada concepts. Reproducible artwork generator lives in `tools/generate_theme_backgrounds.py` and is not part of the APK build.
 - Selected scenery is shared across the app, with existing scrims and card colors retained for text contrast. All themes work offline and are available without a subscription.
 - Device verification pending: gallery and Back/Apply behavior in three languages, theme persistence after restart, contrast, aspect-ratio cropping, large text, TalkBack, and all main/child pages.
+
+
+### Practice styling, goal periods and support (after Build #576)
+
+- Refined the footer, Magic Count switch, ring and counter animations; applied dark theme to child pages and dialogs. Added inline AI Voice Detector download/ready state and explicit developer contact links.
+- Added monthly and yearly targets to a version-10 Room table, non-destructive 9→10 migration, atomic goal saving and compatible optional JSON backup/restore records. Progress displays the current month and year totals. Full device upgrade, rollback and backup round-trip testing remains required.
+- Added a clearly labelled Pro plan preview (monthly/yearly/lifetime); it does not sell subscriptions or claim Google Drive is working. Billing, pricing, entitlement verification and Drive remain separate work. Share cards include the requested developer credit.
+- Voice recognition still uses the unrestricted offline model with finalized whole-phrase matching. Real-time partial counting and improved recognition are not yet verified: accepting unstable partial hypotheses can double count or repeat the false positives reported in Build #574. Requires recorded real-device test corpus and further model evaluation before enabling.
