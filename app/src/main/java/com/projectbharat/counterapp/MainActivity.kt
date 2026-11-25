@@ -369,14 +369,12 @@ fun CounterApp(repo: CounterRepository) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
         val practiceBackground = tab == 0 && !child && !mantraLibrary
-        Image(painterResource(if (practiceBackground) {
-            if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise
-        } else if (dark) R.drawable.brand_background_dark else R.drawable.brand_background_light),
+        Image(painterResource(if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise),
             null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        if (practiceBackground) {
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(
-                Color(0x440F1029), Color.Transparent, Color(0x66100E29)))))
-        }
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
+            if (practiceBackground) listOf(Color(0x440F1029), Color.Transparent, Color(0x66100E29))
+            else if (dark) listOf(Color(0xD9211E39), Color(0xDA211E39))
+            else listOf(Color(0xEDFEF5D8), Color(0xE8FEF5D8)))))
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
@@ -386,7 +384,7 @@ fun CounterApp(repo: CounterRepository) {
                     val footerInk = if (practiceBackground || dark) Color(0xFFFFF6E5) else ink
                     val accent = if (practiceBackground || dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
                     Box(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth().shadow(6.dp, shape).clip(shape)
+                        Row(Modifier.fillMaxWidth().clip(shape)
                             .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             listOf(1, 0, 2).forEach { index ->
@@ -400,11 +398,13 @@ fun CounterApp(repo: CounterRepository) {
                                     2 -> R.drawable.brand_icon_settings
                                     else -> R.drawable.brand_icon_practice
                                 }
-                                Column(Modifier.weight(1f).clickable { navigate(index) }.padding(4.dp),
+                                val interaction = remember { MutableInteractionSource() }
+                                Column(Modifier.weight(1f).clip(RoundedCornerShape(18.dp))
+                                    .clickable(interactionSource = interaction, indication = null) { navigate(index) }.padding(4.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(painterResource(icon), null, Modifier.size(26.dp), tint = if (tab == index) accent else footerInk)
                                     Text(label, color = if (tab == index) accent else footerInk,
-                                        style = MaterialTheme.typography.labelSmall)
+                                        style = MaterialTheme.typography.labelSmall.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.None))
                                 }
                             }
                         }
@@ -415,14 +415,14 @@ fun CounterApp(repo: CounterRepository) {
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 if (tab != 0 || child || mantraLibrary) Row(
-                    Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 26.dp),
+                    Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 26.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (child || mantraLibrary) IconButton(onClick = ::goBack) {
                         Icon(Icons.Default.ArrowBack, uiLanguage.text("Back", "मागे", "वापस"), tint = ink)
                     }
                     Image(painterResource(if (dark) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark), "Bhajame",
-                        Modifier.width(96.dp).height(36.dp), contentScale = ContentScale.Fit)
+                        Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 }
                 Box(Modifier.weight(1f)) {
                 if (achievements) {
@@ -633,7 +633,7 @@ private fun CounterTapScreen(uiLanguage:UiLanguage,count:Int,goal:Int,kind:Strin
     val tapScale = remember { Animatable(1f) }
     val tapScope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize(),horizontalAlignment=Alignment.CenterHorizontally) {
-        Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth(),shape=RoundedCornerShape(26.dp),colors=CardDefaults.cardColors(containerColor=brandGlassColor())) {
             Column(Modifier.fillMaxWidth().padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                 Box(Modifier.size(58.dp).background(if(mantra) Color(0xFFEDE4FA) else Color(0xFFDDF1E8),CircleShape),contentAlignment=Alignment.Center) {
                     Icon(Icons.Default.SelfImprovement,null,tint=Color(0xFF7855A6),modifier=Modifier.size(30.dp))
@@ -677,7 +677,7 @@ private fun ReminderSettingsScreen(uiLanguage: UiLanguage, ink: Color) {
         Text(if (uiLanguage.isEnglish) "Choose times that fit your routine." else uiLanguage.indic("तुमच्या दिनक्रमानुसार वेळ निवडा.", "अपनी दिनचर्या के अनुसार समय चुनें।"), color = ink.copy(alpha = .65f), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp), contentPadding = PaddingValues(bottom = 14.dp)) {
             items(settings, key = { it.id }) { item ->
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(if (uiLanguage.isEnglish) item.titleEn else uiLanguage.indic(item.titleMr, "जप का अनुस्मारक"), color = ink, fontWeight = FontWeight.SemiBold)
@@ -712,7 +712,7 @@ private fun ReminderSettingsScreen(uiLanguage: UiLanguage, ink: Color) {
 
 @Composable
 private fun StatTile(label: String, value: String, ink: Color, modifier: Modifier = Modifier) {
-    Card(modifier, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(modifier, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 13.dp)) {
             Text(label, color = ink.copy(alpha = .55f), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
             Text(value, color = ink, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)

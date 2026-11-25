@@ -27,7 +27,7 @@ fun BackupSettingsScreen(
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (uiLanguage.isEnglish) "Backup & sync" else uiLanguage.indic("बॅकअप व सिंक", "बैकअप और सिंक"), color = ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Text(if (uiLanguage.isEnglish) "Your data stays on this device until you export it." else uiLanguage.indic("निर्यात करेपर्यंत तुमचा डेटा याच उपकरणावर राहतो.", "निर्यात करने तक आपका डेटा इसी डिवाइस पर रहता है।"), color = ink.copy(alpha = .65f), style = MaterialTheme.typography.bodySmall)
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Default.Backup, contentDescription = null, tint = ink)
@@ -44,7 +44,7 @@ fun BackupSettingsScreen(
                 }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.fillMaxWidth().padding(15.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text(if (uiLanguage.isEnglish) "Spreadsheet export" else "स्प्रेडशीट निर्यात", color = ink, fontWeight = FontWeight.SemiBold)
                 Text(if (uiLanguage.isEnglish) "Export counter entries as CSV." else uiLanguage.indic("मोजणीच्या नोंदी CSV स्वरूपात निर्यात करा.", "गिनती के रिकॉर्ड CSV में निर्यात करें।"), color = ink.copy(alpha = .65f), style = MaterialTheme.typography.bodySmall)

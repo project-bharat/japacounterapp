@@ -81,7 +81,9 @@ private fun SettingsDropdown(title: String, options: List<String>, index: Int, o
 
 @Composable
 internal fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = brandGlassColor()),
+        border = androidx.compose.foundation.BorderStroke(1.dp, brandGlassBorder())) {
         Column(Modifier.fillMaxWidth().padding(12.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp))
             content()

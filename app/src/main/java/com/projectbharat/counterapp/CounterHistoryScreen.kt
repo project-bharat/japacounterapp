@@ -44,7 +44,7 @@ fun CounterHistoryScreen(
             TextButton(onClick = onBack) { Text(if (uiLanguage.isEnglish) "Back to Japa report" else uiLanguage.indic("जप अहवालाकडे परत", "जप रिपोर्ट पर वापस")) }
         }
         Text(if (uiLanguage.isEnglish) "HISTORY & ANALYTICS" else uiLanguage.indic("इतिहास व विश्लेषण", "इतिहास और विश्लेषण"), color = ink, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Card(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.fillMaxWidth().padding(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
@@ -64,7 +64,7 @@ fun CounterHistoryScreen(
             Text(date.format(DateTimeFormatter.ofPattern("dd MMM yyyy", uiLanguage.locale)), color = ink, fontWeight = FontWeight.SemiBold)
             TextButton(onClick = onNext, enabled = date.isBefore(LocalDate.now())) { Text((if (uiLanguage.isEnglish) "Next" else uiLanguage.indic("पुढील", "अगला")) + " ›") }
         }
-        Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) {
+        Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = brandGlassColor()) {
             Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text(if (uiLanguage.isEnglish) "Recorded entries" else uiLanguage.indic("नोंदी", "प्रविष्टियाँ"), color = ink.copy(alpha = .6f), style = MaterialTheme.typography.labelSmall)
@@ -82,7 +82,7 @@ fun CounterHistoryScreen(
         } else {
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
                 items(logs, key = { it.id }) { log ->
-                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
                         Row(Modifier.fillMaxWidth().padding(start = 13.dp, end = 5.dp, top = 9.dp, bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f).clickable { editing = log }.padding(vertical = 3.dp)) {
                                 val time = Instant.ofEpochMilli(log.timestamp).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("hh:mm:ss a"))

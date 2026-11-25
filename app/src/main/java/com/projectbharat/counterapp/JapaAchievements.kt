@@ -39,10 +39,10 @@ internal fun JapaAchievements(logs: List<CounterLog>, language: UiLanguage) {
             style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         milestones.forEach { (target, current, streak) ->
             val earned = current >= target
-            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                Row(Modifier.fillMaxWidth().background(Brush.horizontalGradient(
-                    if (earned) listOf(Color(0xFFFFE3B8), Color(0xFFFFF8EC))
-                    else listOf(Color(0xFFF1E9DE), Color(0xFFFFFCF7)))).padding(16.dp),
+            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = brandGlassColor()),
+                border = androidx.compose.foundation.BorderStroke(1.dp, brandGlassBorder())) {
+                Row(Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     val badge = if (!earned) R.drawable.badge_locked else if (streak) when (target) {
                         7 -> R.drawable.streak_7_days
@@ -59,11 +59,11 @@ internal fun JapaAchievements(logs: List<CounterLog>, language: UiLanguage) {
                     Column {
                         Text(if (streak) language.text("$target day practice streak", "$target दिवस सलग जप", "$target दिन लगातार जप")
                             else language.text("$target lifetime chants", "$target एकूण जप", "$target कुल जप"),
-                            color = Color(0xFF302941), fontWeight = FontWeight.SemiBold)
+                            color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                         Text(if (earned) language.text("Badge earned", "पदक मिळाले", "बैज मिला")
-                            else "$current / $target", color = Color(0xFF514655))
+                            else "$current / $target", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         LinearProgressIndicator(progress = { (current.toFloat() / target).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = Color(0xFFA54E0A))
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

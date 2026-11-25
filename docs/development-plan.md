@@ -109,3 +109,12 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Practice now gives the mantra and larger tap target more room; secondary actions are reached by scrolling. The translucent footer no longer has a notch or dot. Mantra rows no longer show photos.
 - Fixed the Progress goal and milestone cards being stacked in the same layout container.
 - Verification pending: CI build and phone review in both themes, multiple screen sizes and languages, including Magic Count, counting, navigation, Progress, achievements and sharing.
+
+
+### Glass surfaces and counting feedback (after Build #572)
+
+- Extended the supplied sunrise and indigo/cream palette across the root screens and child pages, using translucent tinted surfaces for settings, progress, history, backup and achievements. Dialogs retain legible surfaces.
+- Simplified Magic Count to a label and switch with an unobtrusive listening status; voice transcript and microphone-route details are not shown on Practice.
+- Added a non-blocking mantra movement and glow for manual taps and recognized count events; counting remains handled by the existing data and recognition paths. Removed the footer press indication and increased consistent header spacing.
+- Retained the supplied Bhajame wordmark and indigo/mist adaptive icon artwork. The supplied vector logo is a trace, so pixel-perfect fidelity to an original typeface cannot be confirmed until the original font or vector artwork is provided.
+- Pending device checks: glass contrast in both themes, scrolling and large text, TalkBack, Bluetooth and handset recognition, animation on rapid counting and the footer in both system navigation modes.

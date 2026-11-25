@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.heightIn
@@ -136,12 +137,8 @@ private fun ProgressGradientCard(
     content: @Composable () -> Unit
 ) {
     val dark = isSystemInDarkTheme()
-    val colors = when {
-        dark && highlight -> listOf(Color(0xFF565176), Color(0xFF302C4B))
-        dark -> listOf(Color(0xFF484361), Color(0xFF302C4B))
-        highlight -> listOf(Color(0xFFEADCC1), Color(0xFFFEF5D8))
-        else -> listOf(Color(0xFFF2E8D7), Color(0xFFFFFBF1))
-    }
+    val colors = if (dark) listOf(Color(0xD64B456D), Color(0xD1282442))
+        else listOf(Color(0xDEFFF9ED), Color(0xCBEADCC1))
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
@@ -227,12 +224,17 @@ fun AutoChantCounterScreen(
     }
     var target by remember(categoryId) { mutableStateOf(prefs.getString("target_$categoryId", "राम") ?: "राम") }
     var automatic by remember { mutableStateOf(context.getSharedPreferences("tracking_state", Context.MODE_PRIVATE).getBoolean("chant_enabled", false)) }
-    var inputRoute by remember { mutableStateOf<String?>(null) }
+    var animationEvent by remember { mutableIntStateOf(0) }
+    var animationFromVoice by remember { mutableStateOf(false) }
+    val flyingProgress = remember { Animatable(1f) }
+    LaunchedEffect(animationEvent) {
+        if (animationEvent > 0) {
+            flyingProgress.snapTo(0f)
+            flyingProgress.animateTo(1f, tween(650))
+        }
+    }
     var running by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("") }
-    var transcript by remember { mutableStateOf("") }
-    var matched by remember { mutableStateOf(false) }
-    var matchedCount by remember { mutableIntStateOf(0) }
     var pendingMantra by remember(categoryId) { mutableStateOf<ChantPreset?>(null) }
     var selectedDeity by remember(categoryId) { mutableStateOf("All") }
     var query by rememberSaveable(categoryId) { mutableStateOf("") }
@@ -317,12 +319,9 @@ fun AutoChantCounterScreen(
                         automatic = false
                     }
                 }
-                intent.getStringExtra("transcript")?.let { transcript = it }
-                if (intent.hasExtra("matched")) matched = intent.getBooleanExtra("matched", false)
-                if (intent.hasExtra("delta")) {
-                    val delta = intent.getIntExtra("delta", 0)
-                    matched = true
-                    matchedCount = delta
+                if (intent.getIntExtra("delta", 0) > 0) {
+                    animationFromVoice = true
+                    animationEvent++
                 }
             }
         }
@@ -333,8 +332,6 @@ fun AutoChantCounterScreen(
         var lastRetryAt = 0L
         while (true) {
             val active = context.getSharedPreferences("tracking_state", Context.MODE_PRIVATE).getBoolean("chant_audio_active", false)
-            inputRoute = context.getSharedPreferences("tracking_state", Context.MODE_PRIVATE)
-                .getString("chant_input_route", null)
             running = active
             val recoverable = status.contains("reconnecting", true) || status.contains("stopped", true) || status.contains("error", true)
             if (automatic && !active && recoverable && System.currentTimeMillis() - lastRetryAt >= 15000L) {
@@ -348,7 +345,7 @@ fun AutoChantCounterScreen(
 
     if (!mantraLibrary) {
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 4.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 4.dp, end = 4.dp, top = 20.dp, bottom = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -356,40 +353,25 @@ fun AutoChantCounterScreen(
                     "Bhajame", Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 Spacer(Modifier.weight(1f))
                 val magicCountLabel = uiLanguage.text("Magic Count", "मॅजिक काउंट", "मैजिक काउंट")
-                Surface(
-                    modifier = Modifier,
-                    shape = RoundedCornerShape(22.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Row(
-                        Modifier.padding(horizontal = 8.dp, vertical = 0.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                        Text(magicCountLabel, style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        Switch(
-                            checked = automatic,
-                            modifier = Modifier.semantics { contentDescription = magicCountLabel },
-                            onCheckedChange = { enabled ->
-                                if (!enabled) stopRecognition()
-                                else {
-                                    automatic = false
-                                    matched = false
-                                    matchedCount = 0
-                                    transcript = ""
-                                    status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
-                                    running = false
-                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
-                                        microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
-                                    else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-                                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    else startService()
-                                }
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(magicCountLabel, style = MaterialTheme.typography.labelLarge, color = Color(0xFFFEF5E6))
+                    Switch(
+                        checked = automatic,
+                        modifier = Modifier.semantics { contentDescription = magicCountLabel },
+                        onCheckedChange = { enabled ->
+                            if (!enabled) stopRecognition()
+                            else {
+                                automatic = false
+                                status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
+                                running = false
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+                                    microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+                                else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                else startService()
                             }
-                        )
-                    }
+                        }
+                    )
                 }
             }
             Spacer(Modifier.height(22.dp))
@@ -397,22 +379,22 @@ fun AutoChantCounterScreen(
             val malaFraction = malaProgress / 108f
             val beadTint by animateColorAsState(if (malaProgress == 108) Color(0xFFEADCC1) else Color(0xFF94B5C2), label = "beadCountTint")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
-                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(totalCount.toString(), color = Color(0xFF285D87), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "LIFETIME" else uiLanguage.indic("आजवरचे जप", "अब तक के जप"), color = Color(0xFF285D87), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(totalCount.toString(), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "LIFETIME" else uiLanguage.indic("आजवरचे जप", "अब तक के जप"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
-                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$malaProgress/108", color = Color(0xFF423C6D), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "MALA PROGRESS" else uiLanguage.indic("माळ प्रगती", "माला की प्रगति"), color = Color(0xFF76528D), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("$malaProgress/108", color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "MALA PROGRESS" else uiLanguage.indic("माळ प्रगती", "माला की प्रगति"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color.White.copy(alpha = .66f)) {
-                    Column(Modifier.background(Brush.linearGradient(listOf(Color.White.copy(alpha = .35f), Color(0xFFFFE6CB).copy(alpha = .25f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text((totalCount / 108).toString(), color = Color(0xFFB87928), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                        Text(if (uiLanguage.isEnglish) "MALAS" else uiLanguage.indic("पूर्ण माळा", "पूरी मालाएँ"), color = Color(0xFF9A6828), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(14.dp), color = Color(0xFF282442).copy(alpha = .52f)) {
+                    Column(Modifier.background(Brush.linearGradient(listOf(Color(0xFF94B5C2).copy(alpha = .22f), Color(0xFF423C6D).copy(alpha = .08f)))).padding(vertical = 10.dp, horizontal = 3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text((totalCount / 108).toString(), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                        Text(if (uiLanguage.isEnglish) "MALAS" else uiLanguage.indic("पूर्ण माळा", "पूरी मालाएँ"), color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
@@ -423,6 +405,9 @@ fun AutoChantCounterScreen(
             val circleAccent by animateColorAsState(if (count > 0 && count % 108 == 0) Color(0xFFEADCC1) else Color(0xFF94B5C2), label = "japaCircleAccent")
             val circleSize = minOf(280, (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp - 72).coerceAtLeast(180)).dp
             Box(Modifier.padding(top = 6.dp).size(circleSize), contentAlignment = Alignment.Center) {
+                val pulse = if (animationEvent > 0) (1f - flyingProgress.value) else 0f
+                Box(Modifier.fillMaxSize().graphicsLayer(scaleX = 1f + pulse * .18f, scaleY = 1f + pulse * .18f)
+                    .background(Brush.radialGradient(listOf(Color(0xFFB9D9E2).copy(alpha = .5f * pulse), Color.Transparent)), CircleShape))
                 CircularProgressIndicator(
                     progress = { malaFraction },
                     modifier = Modifier.size(circleSize),
@@ -436,7 +421,11 @@ fun AutoChantCounterScreen(
                         .shadow(12.dp, CircleShape)
                         .background(Brush.linearGradient(listOf(Color(0xFFFEF5D8), Color(0xFFEADCC1))), CircleShape)
                         .border(3.dp, circleAccent, CircleShape)
-                        .clickable(interactionSource = manualInteraction, indication = null, onClick = { onManualCount(target) }),
+                        .clickable(interactionSource = manualInteraction, indication = null, onClick = {
+                            onManualCount(target)
+                            animationFromVoice = false
+                            animationEvent++
+                        }),
                     contentAlignment = Alignment.Center
                 ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -445,6 +434,19 @@ fun AutoChantCounterScreen(
                     Text(if (uiLanguage.isEnglish) "TAP TO COUNT" else uiLanguage.indic("स्पर्श करून मोजा", "गिनने के लिए टैप करें"), color = Color(0xFF38234F), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 }
             }
+                if (animationEvent > 0 && flyingProgress.value < 1f) {
+                    val progress = flyingProgress.value
+                    val travel = with(androidx.compose.ui.platform.LocalDensity.current) { (circleSize / 2 + 45.dp).toPx() }
+                    Text(displayMantra(context, categoryId, target, latinMantras),
+                        modifier = Modifier.graphicsLayer {
+                            translationY = (if (animationFromVoice) travel else -travel) * (1f - progress)
+                            scaleX = 1f - progress * .35f
+                            scaleY = 1f - progress * .35f
+                            alpha = (if (progress < .15f) progress / .15f else (1f - progress) / .85f).coerceIn(0f, 1f)
+                        }.clearAndSetSemantics { },
+                        maxLines = 1, textAlign = TextAlign.Center,
+                        color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
             }
             if (!automatic && status.isNotBlank() &&
                 !status.contains("paused", true) && !status.contains("थांबवली") && !status.contains("रुकी")) {
@@ -452,64 +454,18 @@ fun AutoChantCounterScreen(
                     style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
             }
             if (automatic) {
-                val listeningOffline = running && (status.contains("Listening offline", true) || status.contains("Mantra matched", true) || status.contains("ऐकत आहे", true) || status.contains("मंत्र जुळला", true))
-                val micPulse = rememberInfiniteTransition(label = "offlineMicPulse")
-                val micScale by micPulse.animateFloat(
-                    initialValue = 1f, targetValue = 1.18f,
-                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                        animation = androidx.compose.animation.core.tween(650),
-                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-                    ), label = "micScale"
-                )
-                Surface(
-                    Modifier.fillMaxWidth().padding(top = 10.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (listeningOffline) Color(0xFFE4F5EA) else Color(0xFFF3EFF8)
-                ) {
-                    Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 18.dp)) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                            if (listeningOffline) {
-                                Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFF16834F), modifier = Modifier.size(22.dp).graphicsLayer(scaleX = micScale, scaleY = micScale))
-                                Text(if (uiLanguage.isEnglish) "LISTENING OFFLINE" else uiLanguage.indic("ऑफलाइन ऐकत आहे", "ऑफ़लाइन सुन रहा है"), modifier = Modifier.weight(1f), color = Color(0xFF16834F), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                            } else {
-                                Icon(Icons.Default.Mic, contentDescription = null, tint = Color(0xFF76528D), modifier = Modifier.size(20.dp))
-                                Text(if (uiLanguage.isEnglish) "LIVE RECOGNITION" else uiLanguage.indic("थेट आवाज ओळख", "लाइव आवाज़ पहचान"), modifier = Modifier.weight(1f), color = Color(0xFF76528D), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                        if (listeningOffline) {
-                            val spoken = displayMantra(context, categoryId, target, latin = false)
-                            val formatted = if (latinMantras && spoken.isNotBlank()) {
-                                transcript.replace(spoken, displayMantra(context, categoryId, target, latin = true))
-                            } else transcript
-                            Text(formatted.ifBlank { uiLanguage.text("Listening offline", "ऑफलाइन ऐकत आहे", "ऑफ़लाइन सुन रहा है") },
-                                color = Color(0xFF16834F), style = MaterialTheme.typography.bodyMedium, maxLines = 2)
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                                Text(uiLanguage.text("Preparing offline model…", "ऑफलाइन मॉडेल तयार होत आहे…", "ऑफ़लाइन मॉडल तैयार हो रहा है…"),
-                                    color = Color(0xFF302941), style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                        if (inputRoute != null) Text(
-                            when (inputRoute) {
-                                "bluetooth" -> uiLanguage.text("Bluetooth microphone", "ब्लूटूथ मायक्रोफोन", "ब्लूटूथ माइक्रोफ़ोन")
-                                "bluetooth_unavailable" -> uiLanguage.text("Headset mic unavailable · using device mic",
-                                    "हेडसेटचा माइक उपलब्ध नाही · फोनचा माइक वापरत आहे", "हेडसेट माइक उपलब्ध नहीं · फ़ोन का माइक इस्तेमाल हो रहा है")
-                                else -> uiLanguage.text("Device microphone", "उपकरणाचा मायक्रोफोन", "डिवाइस का माइक्रोफ़ोन")
-                            },
-                            color = Color(0xFF302941), style = MaterialTheme.typography.labelSmall
-                        )
-                        if (matched) Text(
-                            uiLanguage.text("Mantra matched", "मंत्र जुळला", "मंत्र पहचाना गया") +
-                                if (matchedCount > 0) " · +$matchedCount" else "",
-                            color = Color(0xFF16834F), style = MaterialTheme.typography.labelSmall)
-                    }
+                Row(Modifier.padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Mic, null, tint = Color(0xFFFEF5E6), modifier = Modifier.size(18.dp))
+                    Text(if (running) uiLanguage.text("Listening offline", "ऑफलाइन ऐकत आहे", "ऑफ़लाइन सुन रहा है")
+                        else uiLanguage.text("Preparing offline model…", "ऑफलाइन मॉडेल तयार होत आहे…", "ऑफ़लाइन मॉडल तैयार हो रहा है…"),
+                        color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelMedium)
                 }
             }
             Spacer(Modifier.height((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .22f).dp))
             Surface(
                 modifier = Modifier.padding(top = 30.dp, bottom = 32.dp).widthIn(max = 290.dp).fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp), color = Color(0xFFFEF5E8).copy(alpha = .94f)
+                shape = RoundedCornerShape(22.dp), color = Color(0xFFFEF5E8).copy(alpha = .82f)
             ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -580,7 +536,7 @@ fun AutoChantCounterScreen(
                         (target == item.devanagari || target == item.latin))
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                        color = if (selected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .94f) else brandGlassColor(),
                         border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
                     ) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -731,8 +687,6 @@ fun JapaReportScreen(
         }
         var shareKind by rememberSaveable { mutableIntStateOf(0) }
         val goalReached = todayCount >= target
-        Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))) {
-        Image(painterResource(R.drawable.practice_sunrise), null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
         ProgressGradientCard(Modifier.fillMaxWidth(), highlight = goalReached) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(uiLanguage.text("Today’s goal · All mantras", "आजचे लक्ष्य · सर्व मंत्र", "आज का लक्ष्य · सभी मंत्र"),
@@ -747,7 +701,6 @@ fun JapaReportScreen(
                     TextButton(onClick = { shareKind = 1 }) { Text(uiLanguage.text("Share", "शेअर करा", "साझा करें")) }
                 }
             }
-        }
         }
         val milestone = if (total < 108) 108 else if (total < 1080) 1080 else ((total.toLong() / 1080) + 1) * 1080
         val monthlyTotal = totalsByDate.filterKeys { it.startsWith(today.toString().take(7)) }.values.sum()
@@ -785,7 +738,7 @@ fun JapaReportScreen(
                 } },
                 dismissButton = { TextButton(onClick = { shareKind = 0 }) { Text(if (uiLanguage.isEnglish) "Close" else uiLanguage.indic("बंद करा", "बंद करें")) } })
         }
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(if (uiLanguage.isEnglish) "PROGRESS ANALYTICS" else uiLanguage.indic("जप प्रगती विश्लेषण", "जप प्रगति का विश्लेषण"), color = ink, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
@@ -819,8 +772,8 @@ fun JapaReportScreen(
                         }
                     }
                 }
-                Surface(color=Color(0xFFE8DDF4),shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()) {
-                    Text((if(uiLanguage.isEnglish)"Total: " else uiLanguage.indic("एकूण: ", "कुल: "))+NumberFormat.getIntegerInstance(uiLanguage.locale).format(periodSum)+(if(uiLanguage.isEnglish)" Japa" else " जप"),modifier=Modifier.padding(12.dp),color=Color(0xFF5C3B85),fontWeight=FontWeight.Bold,textAlign=TextAlign.Center)
+                Surface(color=brandGlassColor(),shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()) {
+                    Text((if(uiLanguage.isEnglish)"Total: " else uiLanguage.indic("एकूण: ", "कुल: "))+NumberFormat.getIntegerInstance(uiLanguage.locale).format(periodSum)+(if(uiLanguage.isEnglish)" Japa" else " जप"),modifier=Modifier.padding(12.dp),color=ink,fontWeight=FontWeight.Bold,textAlign=TextAlign.Center)
                 }
             }
         }
@@ -850,7 +803,7 @@ fun JapaReportScreen(
             if (uiLanguage.isEnglish) "Goal streak · $goalStreak days" else uiLanguage.indic("लक्ष्याची सलगता · $goalStreak दिवस", "लगातार लक्ष्य पूरे · $goalStreak दिन"),
             color = ink, style = MaterialTheme.typography.titleSmall
         )
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Text(if (uiLanguage.isEnglish) month.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy", uiLanguage.locale)) else month.format(java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy", uiLanguage.locale)), color = ink, fontWeight = FontWeight.Bold)
@@ -900,7 +853,7 @@ fun JapaReportScreen(
                 Text(if (uiLanguage.isEnglish) "✓ Goal reached · • Partial practice" else uiLanguage.indic("✓ लक्ष्य पूर्ण · • काही जप झाले", "✓ लक्ष्य पूरा · • कुछ जप हुए"), color = ink.copy(alpha=.55f), style = MaterialTheme.typography.labelSmall)
             }
         }
-        Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(20.dp), colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth(), shape=RoundedCornerShape(20.dp), colors=CardDefaults.cardColors(containerColor=brandGlassColor())) {
             Column(Modifier.padding(14.dp), verticalArrangement=Arrangement.spacedBy(8.dp)) {
                 Text(if(uiLanguage.isEnglish)"YOUR JAPA NOTEBOOK" else uiLanguage.indic("तुमची जप नोंदवही", "आपकी जप डायरी"),color=ink,fontWeight=FontWeight.SemiBold)
                 Text(if(uiLanguage.isEnglish)"Last 5 days of japa" else uiLanguage.indic("मागील ५ दिवसांचा जप", "पिछले ५ दिनों के जप"),color=ink.copy(alpha=.55f),style=MaterialTheme.typography.bodySmall)
@@ -913,7 +866,7 @@ fun JapaReportScreen(
                 }
             }
         }
-        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = brandGlassColor())) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(if (uiLanguage.isEnglish) "JAPA BY MANTRA" else uiLanguage.indic("मंत्रानुसार जप", "मंत्र के अनुसार जप"), color = ink, fontWeight = FontWeight.SemiBold)
                 if (mantraBreakdown.isEmpty()) Text(if (uiLanguage.isEnglish) "No japa records yet" else uiLanguage.indic("अजून जप नोंद नाही", "अभी कोई जप रिकॉर्ड नहीं है"), color = ink.copy(alpha=.6f))
@@ -947,7 +900,7 @@ private fun JapaActivityChart(days:List<DayTotal>, mode:String, modifier:Modifie
         val slot=size.width/days.size.coerceAtLeast(1)
         if(mode=="BAR") days.forEachIndexed { i,d ->
             val h=(bottom-top)*d.total/max
-            drawRoundRect(brush=Brush.verticalGradient(listOf(Color(0xFFFFB660),Color(0xFFB75213)),startY=bottom-h,endY=bottom),topLeft=Offset(i*slot+slot*.2f,bottom-h),size=Size(slot*.6f,h),cornerRadius=androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
+            drawRoundRect(brush=Brush.verticalGradient(listOf(Color(0xFF94B5C2),Color(0xFF423C6D)),startY=bottom-h,endY=bottom),topLeft=Offset(i*slot+slot*.2f,bottom-h),size=Size(slot*.6f,h),cornerRadius=androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
         } else {
             val points=days.mapIndexed { i,d -> Offset(i*slot+slot/2,bottom-(bottom-top)*d.total/max) }
             points.zipWithNext().forEach { (a,b)->drawLine(ink,a,b,strokeWidth=3.dp.toPx()) }
