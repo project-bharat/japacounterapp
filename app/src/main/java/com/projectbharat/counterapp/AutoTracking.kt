@@ -40,6 +40,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
@@ -136,7 +140,7 @@ private fun ProgressGradientCard(
     highlight: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val colors = if (dark) listOf(Color(0xD64B456D), Color(0xD1282442))
         else listOf(Color(0xDEFFF9ED), Color(0xCBEADCC1))
     Surface(
@@ -234,6 +238,7 @@ fun AutoChantCounterScreen(
         }
     }
     var running by remember { mutableStateOf(false) }
+    var recognizedText by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("") }
     var pendingMantra by remember(categoryId) { mutableStateOf<ChantPreset?>(null) }
     var selectedDeity by remember(categoryId) { mutableStateOf("All") }
@@ -264,6 +269,7 @@ fun AutoChantCounterScreen(
         ChantRecognitionService.stop(context)
         running = false
         automatic = false
+        recognizedText = ""
         status = if (uiLanguage.isEnglish) "Voice paused" else uiLanguage.indic("आवाज मोजणी थांबवली", "आवाज़ से गिनती रुकी है")
     }
     val startService = {
@@ -319,6 +325,7 @@ fun AutoChantCounterScreen(
                         automatic = false
                     }
                 }
+                intent.getStringExtra("transcript")?.let { recognizedText = it.trim().takeLast(160) }
                 if (intent.getIntExtra("delta", 0) > 0) {
                     animationFromVoice = true
                     animationEvent++
@@ -362,6 +369,7 @@ fun AutoChantCounterScreen(
                             if (!enabled) stopRecognition()
                             else {
                                 automatic = false
+                                recognizedText = ""
                                 status = uiLanguage.text("Starting Magic Count…", "मॅजिक काउंट सुरू होत आहे…", "मैजिक काउंट शुरू हो रहा है…")
                                 running = false
                                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
@@ -428,6 +436,20 @@ fun AutoChantCounterScreen(
                         }),
                     contentAlignment = Alignment.Center
                 ) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val petalColor = Color(0xFF423C6D).copy(alpha = .13f)
+                    val petalWidth = size.width * .25f
+                    val petalHeight = size.height * .43f
+                    repeat(12) { petal ->
+                        rotate(petal * 30f) {
+                            drawOval(color = petalColor,
+                                topLeft = Offset((size.width - petalWidth) / 2f, size.height * .035f),
+                                size = Size(petalWidth, petalHeight), style = Stroke(width = 1.3.dp.toPx()))
+                        }
+                    }
+                    drawCircle(petalColor, radius = size.minDimension * .43f, style = Stroke(width = 1.dp.toPx()))
+                    drawCircle(petalColor, radius = size.minDimension * .38f, style = Stroke(width = .8.dp.toPx()))
+                }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.SelfImprovement, null, tint = Color(0xFF7855A6), modifier = Modifier.size(42.dp))
                     Text((if (sessionCount > 0) sessionCount.toString() else "+1"), color = Color(0xFF38234F), style = MaterialTheme.typography.displayMedium, fontWeight = FontWeight.ExtraBold)
@@ -444,8 +466,9 @@ fun AutoChantCounterScreen(
                             scaleY = 1f - progress * .35f
                             alpha = (if (progress < .15f) progress / .15f else (1f - progress) / .85f).coerceIn(0f, 1f)
                         }.clearAndSetSemantics { },
-                        maxLines = 1, textAlign = TextAlign.Center,
-                        color = Color(0xFFFEF5E6), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
+                        color = androidx.compose.ui.graphics.lerp(Color(0xFFFEF5E6), Color(0xFF302B54), progress),
+                        style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 }
             }
             if (!automatic && status.isNotBlank() &&
@@ -454,45 +477,66 @@ fun AutoChantCounterScreen(
                     style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth())
             }
             if (automatic) {
-                Row(Modifier.padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Mic, null, tint = Color(0xFFFEF5E6), modifier = Modifier.size(18.dp))
-                    Text(if (running) uiLanguage.text("Listening offline", "ऑफलाइन ऐकत आहे", "ऑफ़लाइन सुन रहा है")
-                        else uiLanguage.text("Preparing offline model…", "ऑफलाइन मॉडेल तयार होत आहे…", "ऑफ़लाइन मॉडल तैयार हो रहा है…"),
-                        color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelMedium)
+                val microphonePulse = rememberInfiniteTransition(label = "microphonePulse")
+                val microphoneScale by microphonePulse.animateFloat(
+                    initialValue = 1f, targetValue = 1.18f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(tween(800), RepeatMode.Reverse),
+                    label = "listeningScale")
+                Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Mic, null, tint = Color(0xFFFEF5E6),
+                            modifier = Modifier.size(18.dp).graphicsLayer {
+                                scaleX = if (running) microphoneScale else 1f
+                                scaleY = if (running) microphoneScale else 1f
+                            })
+                        Text(if (running) uiLanguage.text("Listening", "ऐकत आहे", "सुन रहा है")
+                            else uiLanguage.text("Preparing voice model…", "आवाज मॉडेल तयार होत आहे…", "आवाज़ मॉडल तैयार हो रहा है…"),
+                            color = Color(0xFFFEF5E6), style = MaterialTheme.typography.labelMedium)
+                    }
+                    if (recognizedText.isNotBlank()) {
+                        val spokenMantra = displayMantra(context, categoryId, target, latin = false)
+                        val displayed = if (latinMantras && spokenMantra.isNotBlank())
+                            recognizedText.replace(spokenMantra, displayMantra(context, categoryId, target, latin = true))
+                            else recognizedText
+                        Text(displayed, modifier = Modifier.fillMaxWidth(), color = Color(0xFFFEF5E6),
+                            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
                 }
             }
-            Spacer(Modifier.height((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .22f).dp))
-            Surface(
-                modifier = Modifier.padding(top = 30.dp, bottom = 32.dp).widthIn(max = 290.dp).fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp), color = Color(0xFFFEF5E8).copy(alpha = .82f)
-            ) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF302B54))) {
+            Spacer(Modifier.height((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .30f).dp))
+            Column(Modifier.padding(top = 30.dp, bottom = 32.dp).widthIn(max = 290.dp).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val glassButton = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color(0xAA302B54), contentColor = Color(0xFFFEF5E6))
+                val glassBorder = BorderStroke(1.dp, Color(0xAAFEF5E6))
+                OutlinedButton(onClick = { pendingMantra = null; onLibraryChange(true) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp), shape = RoundedCornerShape(14.dp),
+                    colors = glassButton, border = glassBorder) {
                     Icon(Icons.Default.Search, null)
                     Spacer(Modifier.width(8.dp))
                     Text(uiLanguage.text("Choose mantra", "मंत्र निवडा", "मंत्र चुनें"))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onEditGoal,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(8.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF302B54))) {
+                    OutlinedButton(onClick = onEditGoal, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(8.dp),
+                        colors = glassButton, border = glassBorder) {
                         Icon(Icons.Default.Edit, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(5.dp))
                         Text(uiLanguage.text("Edit goal", "लक्ष्य बदला", "लक्ष्य बदलें"))
                     }
-                    Button(onClick = { onFinish?.invoke() }, enabled = onFinish != null,
+                    OutlinedButton(onClick = { onFinish?.invoke() }, enabled = onFinish != null,
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF423C6D), contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFD6CEC5), disabledContentColor = Color(0xFF554F5E))) {
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xAA302B54),
+                            contentColor = Color(0xFFFEF5E6), disabledContainerColor = Color(0x66302B54),
+                            disabledContentColor = Color(0xFFBBB3C6)), border = glassBorder) {
                         Icon(Icons.Default.Check, null, Modifier.size(16.dp))
                         Spacer(Modifier.width(5.dp))
                         Text(uiLanguage.text("Finish", "सत्र पूर्ण करा", "पूरा करें"))
                     }
                 }
-            }
             }
         }
     }

@@ -359,7 +359,7 @@ fun CounterApp(repo: CounterRepository) {
     val days by weekFlow.collectAsStateWithLifecycle(emptyList())
     val historyLogs by historyLogsFlow.collectAsStateWithLifecycle(emptyList())
     val allMantraLogs by allMantraLogsFlow.collectAsStateWithLifecycle(emptyList())
-    val dark = isSystemInDarkTheme()
+    val dark = isSystemInDarkTheme() || (!child && !mantraLibrary)
     val page = if (dark) Color(0xFF211E39) else Color(0xFFFEF5D8)
     val ink = if (dark) Color(0xFFFEF5E6) else Color(0xFF302B54)
     val scheme = if (dark) darkColorScheme(primary = Color(0xFFB7D1D9), onPrimary = Color(0xFF242044), secondary = Color(0xFFB7D1D9), background = page, onBackground = ink, surface = Color(0xFF302C4B), onSurface = ink, surfaceVariant = Color(0xFF47415F), onSurfaceVariant = Color(0xFFEEE5DE), secondaryContainer = Color(0xFF514C6B), onSecondaryContainer = Color(0xFFFFF6E5))
@@ -368,11 +368,11 @@ fun CounterApp(repo: CounterRepository) {
     MaterialTheme(colorScheme = scheme) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
-        val practiceBackground = tab == 0 && !child && !mantraLibrary
-        Image(painterResource(if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise),
+        val rootBackground = !child && !mantraLibrary
+        Image(painterResource(if (rootBackground) R.drawable.practice_sunrise else if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise),
             null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-            if (practiceBackground) listOf(Color(0x440F1029), Color.Transparent, Color(0x66100E29))
+            if (rootBackground) listOf(Color(0x440F1029), Color.Transparent, Color(0x66100E29))
             else if (dark) listOf(Color(0xD9211E39), Color(0xDA211E39))
             else listOf(Color(0xEDFEF5D8), Color(0xE8FEF5D8)))))
         Scaffold(
@@ -380,9 +380,9 @@ fun CounterApp(repo: CounterRepository) {
             bottomBar = {
                 if (!mantraLibrary && !child) {
                     val shape = RoundedCornerShape(28.dp)
-                    val footerColor = if (practiceBackground || dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
-                    val footerInk = if (practiceBackground || dark) Color(0xFFFFF6E5) else ink
-                    val accent = if (practiceBackground || dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
+                    val footerColor = if (dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
+                    val footerInk = if (dark) Color(0xFFFFF6E5) else ink
+                    val accent = if (dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
                     Box(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().clip(shape)
                             .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),

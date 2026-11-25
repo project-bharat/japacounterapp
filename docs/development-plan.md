@@ -118,3 +118,11 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Added a non-blocking mantra movement and glow for manual taps and recognized count events; counting remains handled by the existing data and recognition paths. Removed the footer press indication and increased consistent header spacing.
 - Retained the supplied Bhajame wordmark and indigo/mist adaptive icon artwork. The supplied vector logo is a trace, so pixel-perfect fidelity to an original typeface cannot be confirmed until the original font or vector artwork is provided.
 - Pending device checks: glass contrast in both themes, scrolling and large text, TalkBack, Bluetooth and handset recognition, animation on rapid counting and the footer in both system navigation modes.
+
+
+### Dark root tabs and listening feedback (after Build #573)
+
+- Practice, Progress and Settings now share the Practice sunrise, dark brand scheme and dark floating footer regardless of system theme; child pages continue to follow the system theme. Glass colors follow the active app theme.
+- Practice shows a pulsing microphone and live recognition text below Listening. The larger mantra animation remains driven by actual tap and counted voice events.
+- Added a low-contrast mandala pattern inside the gradient counter and replaced the action panel with individual translucent buttons, farther down the scroll.
+- Device verification pending for light/dark system settings, transcript accuracy and script display, microphone permissions and Bluetooth, rapid counting, accessibility, scrolling and visual contrast.
