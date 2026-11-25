@@ -1,5 +1,7 @@
 package com.projectbharat.counterapp
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -42,7 +44,18 @@ internal fun JapaAchievements(logs: List<CounterLog>, language: UiLanguage) {
                     if (earned) listOf(Color(0xFFFFE3B8), Color(0xFFFFF8EC))
                     else listOf(Color(0xFFF1E9DE), Color(0xFFFFFCF7)))).padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Icon(Icons.Default.EmojiEvents, null, tint = if (earned) Color(0xFFAD5B12) else Color(0xFF72685D))
+                    val badge = if (!earned) R.drawable.badge_locked else if (streak) when (target) {
+                        7 -> R.drawable.streak_7_days
+                        30 -> R.drawable.streak_30_days
+                        else -> R.drawable.streak_108_days
+                    } else when (target) {
+                        108 -> R.drawable.chants_108
+                        1080 -> R.drawable.chants_1080
+                        10008 -> R.drawable.chants_10008
+                        50000 -> R.drawable.chants_50000
+                        else -> R.drawable.chants_100000
+                    }
+                    Image(painterResource(badge), null, Modifier.size(48.dp))
                     Column {
                         Text(if (streak) language.text("$target day practice streak", "$target दिवस सलग जप", "$target दिन लगातार जप")
                             else language.text("$target lifetime chants", "$target एकूण जप", "$target कुल जप"),

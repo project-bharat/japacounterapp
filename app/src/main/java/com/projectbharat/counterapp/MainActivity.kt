@@ -78,11 +78,10 @@ import java.time.LocalDate
 
 @Composable
 private fun BhajameLaunchSplash() {
-    val dark = isSystemInDarkTheme()
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (dark) Color(0xFF31413A) else Color(0xFFF3EEE3)),
+            .background(Color(0xFF423C6D)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -98,7 +97,7 @@ private fun BhajameLaunchSplash() {
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "Bhajame - Daily Japa & Bhakti",
-                color = if (dark) Color(0xFFF3EEE3) else Color(0xFF31413A),
+                color = Color(0xFFFEF5D8),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -361,30 +360,34 @@ fun CounterApp(repo: CounterRepository) {
     val historyLogs by historyLogsFlow.collectAsStateWithLifecycle(emptyList())
     val allMantraLogs by allMantraLogsFlow.collectAsStateWithLifecycle(emptyList())
     val dark = isSystemInDarkTheme()
-    val page = if (dark) Color(0xFF141414) else Color(0xFFFFF7E9)
-    val ink = if (dark) Color(0xFFFFF5E7) else Color(0xFF27263F)
-    val scheme = if (dark) darkColorScheme(primary = Color(0xFFFFB86B), onPrimary = Color(0xFF432000), secondary = Color(0xFFFFC77F), background = page, onBackground = ink, surface = Color(0xFF222020), onSurface = ink, surfaceVariant = Color(0xFF342D29), onSurfaceVariant = Color(0xFFE9D5C4))
-                 else lightColorScheme(primary = Color(0xFF984400), onPrimary = Color.White, secondary = Color(0xFF815300), background = page, onBackground = ink, surface = Color(0xFFFFFBF4), onSurface = ink)
+    val page = if (dark) Color(0xFF211E39) else Color(0xFFFEF5D8)
+    val ink = if (dark) Color(0xFFFEF5E6) else Color(0xFF302B54)
+    val scheme = if (dark) darkColorScheme(primary = Color(0xFFB7D1D9), onPrimary = Color(0xFF242044), secondary = Color(0xFFB7D1D9), background = page, onBackground = ink, surface = Color(0xFF302C4B), onSurface = ink, surfaceVariant = Color(0xFF47415F), onSurfaceVariant = Color(0xFFEEE5DE), secondaryContainer = Color(0xFF514C6B), onSecondaryContainer = Color(0xFFFFF6E5))
+                 else lightColorScheme(primary = Color(0xFF423C6D), onPrimary = Color.White, secondary = Color(0xFF647E8A), background = page, onBackground = ink, surface = Color(0xFFFFFBF1), onSurface = ink, surfaceVariant = Color(0xFFEADCC1), onSurfaceVariant = Color(0xFF423C6D), secondaryContainer = Color(0xFFE7DFD4), onSecondaryContainer = Color(0xFF302B54))
 
     MaterialTheme(colorScheme = scheme) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
-        if (tab == 0 && !child) {
-            Image(painterResource(R.drawable.practice_sunrise), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(if (dark)
-                listOf(Color(0xCC101323), Color(0xAA151620), Color(0xEE17181F))
-                else listOf(Color(0x88FFF6E8), Color(0xBBFFF8EC), Color(0xEEF7EEE4)))))
+        val practiceBackground = tab == 0 && !child && !mantraLibrary
+        Image(painterResource(if (practiceBackground) {
+            if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise
+        } else if (dark) R.drawable.brand_background_dark else R.drawable.brand_background_light),
+            null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        if (practiceBackground) {
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(
+                Color(0x440F1029), Color.Transparent, Color(0x66100E29)))))
         }
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
                 if (!mantraLibrary && !child) {
                     val shape = RoundedCornerShape(28.dp)
-                    val footerColor = if (dark) Color(0xFF262321) else Color(0xFFFFFBF4)
-                    val accent = MaterialTheme.colorScheme.primary
+                    val footerColor = if (practiceBackground || dark) Color(0xB82D294B) else Color(0xCFFEF9ED)
+                    val footerInk = if (practiceBackground || dark) Color(0xFFFFF6E5) else ink
+                    val accent = if (practiceBackground || dark) Color(0xFFB7D1D9) else MaterialTheme.colorScheme.primary
                     Box(Modifier.navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth()) {
-                        Row(Modifier.padding(top = 10.dp).fillMaxWidth().shadow(10.dp, shape).clip(shape)
-                            .background(footerColor).padding(top = 10.dp, bottom = 8.dp),
+                        Row(Modifier.fillMaxWidth().shadow(6.dp, shape).clip(shape)
+                            .background(footerColor).border(1.dp, Color.White.copy(alpha = .22f), shape).padding(top = 10.dp, bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             listOf(1, 0, 2).forEach { index ->
                                 val label = when (index) {
@@ -393,26 +396,19 @@ fun CounterApp(repo: CounterRepository) {
                                     else -> uiLanguage.text("Practice", "जप", "जप")
                                 }
                                 val icon = when (index) {
-                                    1 -> Icons.Default.BarChart
-                                    2 -> Icons.Default.Edit
-                                    else -> Icons.Default.SelfImprovement
+                                    1 -> R.drawable.brand_icon_progress
+                                    2 -> R.drawable.brand_icon_settings
+                                    else -> R.drawable.brand_icon_practice
                                 }
                                 Column(Modifier.weight(1f).clickable { navigate(index) }.padding(4.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(icon, null, Modifier.size(26.dp), tint = if (tab == index) accent else ink)
-                                    Text(label, color = if (tab == index) accent else ink,
+                                    Icon(painterResource(icon), null, Modifier.size(26.dp), tint = if (tab == index) accent else footerInk)
+                                    Text(label, color = if (tab == index) accent else footerInk,
                                         style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                         }
-                        androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
-                            val position = when (tab) { 1 -> 1f / 6f; 2 -> 5f / 6f; else -> .5f }
-                            val center = size.width * position
-                            drawCircle(color = if (dark) Color(0xFF141414) else Color(0xFFFFF7E9),
-                                radius = 14.dp.toPx(), center = androidx.compose.ui.geometry.Offset(center, 10.dp.toPx()))
-                            drawCircle(color = accent, radius = 5.dp.toPx(),
-                                center = androidx.compose.ui.geometry.Offset(center, 4.dp.toPx()))
-                        }
+
                     }
                 }
             }
@@ -425,7 +421,7 @@ fun CounterApp(repo: CounterRepository) {
                     if (child || mantraLibrary) IconButton(onClick = ::goBack) {
                         Icon(Icons.Default.ArrowBack, uiLanguage.text("Back", "मागे", "वापस"), tint = ink)
                     }
-                    Image(painterResource(if (dark) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark), "Bilan",
+                    Image(painterResource(if (dark) R.drawable.bilan_header_logo_light else R.drawable.bilan_header_logo_dark), "Bhajame",
                         Modifier.width(96.dp).height(36.dp), contentScale = ContentScale.Fit)
                 }
                 Box(Modifier.weight(1f)) {

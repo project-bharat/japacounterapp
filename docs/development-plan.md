@@ -101,3 +101,11 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 
 - Bhajame uses `com.projectbharat.bhajame` so it can coexist with the earlier counter app. Its FileProvider authority follows the application ID.
 - Android treats this as a separate installation with separate local data. Use the existing JSON export and restore flow to transfer compatible data from the earlier app when needed. The Play Console listing and OAuth configuration must use this application ID.
+
+
+### Brand asset refresh and practice layout (after Build #570)
+
+- Applied the supplied Bhajame wordmarks, adaptive launcher icon, splash artwork, light/dark backgrounds, navigation icons and achievement badges. The separate `com.projectbharat.bhajame` application ID is unchanged.
+- Practice now gives the mantra and larger tap target more room; secondary actions are reached by scrolling. The translucent footer no longer has a notch or dot. Mantra rows no longer show photos.
+- Fixed the Progress goal and milestone cards being stacked in the same layout container.
+- Verification pending: CI build and phone review in both themes, multiple screen sizes and languages, including Magic Count, counting, navigation, Progress, achievements and sharing.
