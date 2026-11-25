@@ -133,3 +133,11 @@ Build #548 combines the navigation, Practice, Progress, and Settings changes for
 - Replaced the mantra-constrained Vosk grammar with the model's unrestricted decoder: a tiny target grammar could turn unrelated speech into the target phrase. Count only complete, non-overlapping token matches from finalized results; display partial hypotheses without persisting them. Preserve Devanagari vowel marks and normalize the equivalent ॐ/ओम spelling. Removed partial-mantra and fuzzy matching.
 - Added JVM tests for unrelated speech, word boundaries, complete long mantras, repeated chants and Devanagari marks. Recognition remains probabilistic: device tests must check false positives and missed chants, particularly model limitations, long continuous chanting, Bluetooth, end-of-session and final-result latency.
 - Fixed settings content contrast; gave the mantra library the dark brand background, refined mandala, status colors, footer and Marathi/Hindi app labels. Exact Devanagari spelling of the brand is recorded as भजमे for review.
+
+
+### Offline appearance themes (after Build #575)
+
+- Added Settings → Appearance → Themes with preview, current selection and explicit Apply; Back cancels an unconfirmed choice. A stable local preference restores the chosen theme after relaunch and falls back to the original sunrise for unknown IDs.
+- Included the original sunrise and eight original bundled illustrations inspired by the requested dawn, ghat, bodhi, lotus, Kailash, tulsi, mandala waves and Narmada concepts. Reproducible artwork generator lives in `tools/generate_theme_backgrounds.py` and is not part of the APK build.
+- Selected scenery is shared across the app, with existing scrims and card colors retained for text contrast. All themes work offline and are available without a subscription.
+- Device verification pending: gallery and Back/Apply behavior in three languages, theme persistence after restart, contrast, aspect-ratio cropping, large text, TalkBack, and all main/child pages.

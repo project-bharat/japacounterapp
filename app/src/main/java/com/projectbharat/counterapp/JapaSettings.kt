@@ -24,7 +24,7 @@ internal fun JapaSettingsScreen(
     uiLanguage: UiLanguage, tap: Boolean, mala: Boolean, sound: Boolean,
     latinMantras: Boolean, onLanguage: (UiLanguage) -> Unit, onMantraScript: (Boolean) -> Unit, onTap: (Boolean) -> Unit, onMala: (Boolean) -> Unit,
     onSound: (Boolean) -> Unit, onReminders: () -> Unit, onModels: () -> Unit,
-    onBackup: () -> Unit, onHelp: () -> Unit
+    onBackup: () -> Unit, onHelp: () -> Unit, themeName: String, onThemes: () -> Unit
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -32,6 +32,9 @@ internal fun JapaSettingsScreen(
             PreferenceSwitch(if (uiLanguage.isEnglish) "Tap vibration" else uiLanguage.indic("स्पर्श कंपन", "टैप पर कंपन"), tap, onTap)
             PreferenceSwitch(if (uiLanguage.isEnglish) "Mala completion vibration" else uiLanguage.indic("माळ पूर्ण झाल्यावर कंपन", "माला पूरी होने पर कंपन"), mala, onMala)
             PreferenceSwitch(if (uiLanguage.isEnglish) "Tap sound" else uiLanguage.indic("स्पर्श ध्वनी", "टैप की ध्वनि"), sound, onSound)
+        }
+        SettingsGroup(uiLanguage.text("Appearance", "देखावा", "दिखावट")) {
+            SettingsLink(uiLanguage.text("Themes", "थीम", "थीम") + " · " + themeName, onThemes)
         }
         SettingsGroup(uiLanguage.text("Language", "भाषा", "भाषा")) {
             SettingsDropdown(if (uiLanguage.isEnglish) "App language" else uiLanguage.indic("अॅपची भाषा", "ऐप की भाषा"),

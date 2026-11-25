@@ -203,6 +203,7 @@ fun CounterApp(repo: CounterRepository) {
     val appPreferences = remember { context.getSharedPreferences("app_preferences", android.content.Context.MODE_PRIVATE) }
     var uiLanguage by remember { mutableStateOf(UiLanguage.load(context)) }
     var latinMantras by remember { mutableStateOf(appPreferences.getBoolean("mantra_latin_script", false)) }
+    var selectedTheme by remember { mutableStateOf(BhajameTheme.fromId(appPreferences.getString("background_theme", null))) }
     var monthlyHistory by remember { mutableStateOf(false) }
 
     val reportState = rememberSaveableStateHolder()
@@ -215,6 +216,7 @@ fun CounterApp(repo: CounterRepository) {
     var tab by rememberSaveable { mutableStateOf(0) }
     var help by rememberSaveable { mutableStateOf(false) }
     var achievements by rememberSaveable { mutableStateOf(false) }
+    var themePicker by rememberSaveable { mutableStateOf(false) }
     fun navigate(destination: Int) {
         tab = destination
         monthlyHistory = false
@@ -222,6 +224,7 @@ fun CounterApp(repo: CounterRepository) {
         backupScreen = false
         help = false
         achievements = false
+        themePicker = false
     }
     var resetDialog by remember { mutableStateOf(false) }
     var historyDate by remember { mutableStateOf(LocalDate.now()) }
@@ -236,7 +239,7 @@ fun CounterApp(repo: CounterRepository) {
     var finishedSession by remember { mutableStateOf<JapaSession?>(null) }
     var finishingSession by remember { mutableStateOf(false) }
     var mantraLibrary by rememberSaveable { mutableStateOf(false) }
-    val child = monthlyHistory || remindersScreen || backupScreen || help || achievements
+    val child = monthlyHistory || remindersScreen || backupScreen || help || achievements || themePicker
     fun goBack() {
         when {
             mantraLibrary -> mantraLibrary = false
@@ -369,7 +372,7 @@ fun CounterApp(repo: CounterRepository) {
         if (voiceModelsDialog) VoiceModelsDialog(uiLanguage = uiLanguage, onDismiss = { voiceModelsDialog = false })
         Box(Modifier.fillMaxSize().background(page)) {
         val rootBackground = !child
-        Image(painterResource(if (rootBackground) R.drawable.practice_sunrise else if (dark) R.drawable.practice_sunrise_dark else R.drawable.practice_sunrise),
+        Image(painterResource(selectedTheme.image),
             null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
             if (rootBackground) listOf(Color(0x440F1029), Color.Transparent, Color(0x66100E29))
@@ -425,7 +428,13 @@ fun CounterApp(repo: CounterRepository) {
                         Modifier.width(128.dp).height(40.dp), contentScale = ContentScale.Fit)
                 }
                 Box(Modifier.weight(1f)) {
-                if (achievements) {
+                if (themePicker) {
+                    BhajameThemePicker(selectedTheme, uiLanguage) { theme ->
+                        selectedTheme = theme
+                        appPreferences.edit().putString("background_theme", theme.id).apply()
+                        themePicker = false
+                    }
+                } else if (achievements) {
                     JapaAchievements(allMantraLogs, uiLanguage)
                 } else if (help) {
                     JapaHelpScreen(uiLanguage)
@@ -494,6 +503,8 @@ fun CounterApp(repo: CounterRepository) {
                         onTap = { tapFeedback = it; preferences.edit().putBoolean("tap", it).apply() },
                         onMala = { malaFeedback = it; preferences.edit().putBoolean("mala", it).apply() },
                         onSound = { soundFeedback = it; preferences.edit().putBoolean("sound", it).apply() },
+                        themeName = selectedTheme.title(uiLanguage),
+                        onThemes = { themePicker = true },
                         onReminders = { remindersScreen = true },
                         onModels = { voiceModelsDialog = true },
                         onBackup = { backupScreen = true },
