@@ -180,6 +180,7 @@ internal fun DeveloperCard(language: UiLanguage) {
     fun open(uri: String) { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(uri))) } }
     SettingsGroup(language.text("Designed & developed by", "संकल्पना व विकास", "परिकल्पना और विकास")) {
         Text("Bharat Rasve", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text("+91 72188 38122", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             TextButton(onClick = { open("https://wa.me/917218838122") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("WhatsApp") }
             TextButton(onClick = { open("https://www.linkedin.com/in/bharatrasve") }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("LinkedIn") }

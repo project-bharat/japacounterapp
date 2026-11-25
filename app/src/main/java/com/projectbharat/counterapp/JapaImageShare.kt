@@ -87,7 +87,7 @@ private fun renderJapaImage(context: Context, card: JapaImageCard): Bitmap {
     }
     paint.color = 0xFFFCF9F4.toInt()
     canvas.drawRoundRect(RectF(64f, 250f, 1016f, 1218f), 48f, 48f, paint)
-    val logo = BitmapFactory.decodeResource(context.resources, R.drawable.bilan_header_logo_dark)
+    val logo = BitmapFactory.decodeResource(context.resources, R.drawable.bilan_header_logo_light)
     if (logo != null) {
         val width = 258f
         val height = width * logo.height / logo.width
